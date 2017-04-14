@@ -137,9 +137,10 @@ public class GraphDrawingVis {
 
             // calculate lengths based on the real values and distort a certain percentage of them
             int distort = rnd.nextInt(100);
-            System.out.println("Number of vertices NV = " + NV);
-            System.out.println("Number of edges NE = " + NE);
-            System.out.println("Distortion percentage = " + distort);
+            System.out.println("seed                    = " + seed);
+            System.out.println("Number of vertices NV   = " + NV);
+            System.out.println("Number of edges NE      = " + NE);
+            System.out.println("Distortion percentage   = " + distort);
             if (debug) System.out.println("Required edge lengths: ");
 
             edgeLen = new int[NE];
@@ -399,7 +400,7 @@ public class GraphDrawingVis {
     }
 
     // ---------------------------------------------------
-    public GraphDrawingVis(long seed) {
+    public double exec(long seed) {
         //interface for runTest
         if (vis) {
             jf = new JFrame();
@@ -418,13 +419,15 @@ public class GraphDrawingVis {
                 e.printStackTrace();
             }
         }
-        System.out.println("Score = " + runTest(seed));
+        double score = runTest(seed);
+        System.out.println("Score                   = " + score);
         if (proc != null)
             try {
                 proc.destroy();
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        return score;
     }
 
     // ---------------------------------------------------
@@ -437,9 +440,12 @@ public class GraphDrawingVis {
             if (args[i].equals("-debug")) debug = true;
             if (args[i].equals("-labels")) labels = true;
         }
-        for (long seed = 100, end = seed + 20; seed < end; ++seed) {
-            new GraphDrawingVis(seed);
+        int testcase = 100;
+        double sum = 0;
+        for (long seed = 100, end = seed + testcase; seed < end; ++seed) {
+            sum += new GraphDrawingVis().exec(seed);
         }
+        System.out.println("average                 = " + (sum / testcase));
     }
 
     // ---------------------------------------------------
