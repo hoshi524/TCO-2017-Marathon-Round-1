@@ -429,17 +429,17 @@ public class GraphDrawingVis {
 
     // ---------------------------------------------------
     public static void main(String[] args) {
-        long seed = 1;
-        vis = true;
+        vis = false;
         labels = false;
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-seed")) seed = Long.parseLong(args[++i]);
             if (args[i].equals("-exec")) exec = args[++i];
             if (args[i].equals("-vis")) vis = true;
             if (args[i].equals("-debug")) debug = true;
             if (args[i].equals("-labels")) labels = true;
         }
-        new GraphDrawingVis(seed);
+        for (long seed = 100, end = seed + 20; seed < end; ++seed) {
+            new GraphDrawingVis(seed);
+        }
     }
 
     // ---------------------------------------------------
