@@ -4,7 +4,7 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.security.SecureRandom;
-import java.util.HashSet;
+import java.util.*;
 
 // --------------------------------------------------------
 class Pnt {
@@ -166,6 +166,8 @@ public class GraphDrawingVis {
         }
     }
 
+    Set<Integer> tver = new HashSet<>();
+
     // ---------------------------------------------------
     double calcScore(boolean deb) {
         // calculate the score of current arrangement of points
@@ -186,6 +188,8 @@ public class GraphDrawingVis {
         max_ratio = -1;
         double max1 = 0;
         double max2 = 0;
+        int mini = -1;
+        int maxi = -1;
         for (int i = 0; i < NE; ++i) {
             double len = Math.sqrt(p[edgeBeg[i]].dist2(p[edgeEnd[i]]));
             double r = len / edgeLen[i];
@@ -193,15 +197,22 @@ public class GraphDrawingVis {
                 min_ratio = r;
                 min1 = len;
                 min2 = edgeLen[i];
+                mini = i;
             }
             if (max_ratio < r) {
                 max_ratio = r;
                 max1 = len;
                 max2 = edgeLen[i];
+                maxi = i;
             }
             ratios[i] = r;
             if (deb && Math.max(len, edgeLen[i]) >= Math.min(len, edgeLen[i])*2) System.out.println(edgeLen[i] + " " + (int)len + " " + String.format("%.3f", r));
         }
+        tver.clear();
+        tver.add(edgeBeg[mini]);
+        tver.add(edgeEnd[mini]);
+        tver.add(edgeBeg[maxi]);
+        tver.add(edgeEnd[maxi]);
         System.out.println("Min ratio = " + String.format("%.2f", min_ratio) + " ( " + (int)min1 + " , " + (int)min2 + " )");
         System.out.println("Max ratio = " + String.format("%.2f", max_ratio) + " ( " + (int)max1 + " , " + (int)max2 + " )");
         return min_ratio / max_ratio;
@@ -248,13 +259,6 @@ public class GraphDrawingVis {
                 p = pt;
             }
 
-            if (vis) {
-                // draw the image
-                jf.setSize(SZX + 17, SZY + 37);
-                jf.setVisible(true);
-                draw();
-            }
-
             if (debug && false) {
                 System.out.println("Final vertices coordinates: ");
                 for (int i = 0; i < NV; ++i)
@@ -263,6 +267,17 @@ public class GraphDrawingVis {
 
             double score = calcScore(debug);
             if (!errmes.equals("")) addFatalError(errmes);
+
+            if (vis && score < 0.15) {
+                // draw the image
+                jf = new JFrame();
+                v = new Vis();
+                jf.getContentPane().add(v);
+                jf.setSize(SZX + 17, SZY + 37);
+                jf.setVisible(true);
+                draw();
+            }
+
             return score;
         } catch (Exception e) {
             addFatalError("An exception occurred while trying to process your program's results.");
@@ -348,6 +363,7 @@ public class GraphDrawingVis {
                         if (min_ratio > 1.0 - 1E-5) c = 0;
                         else c = 0x10001 * (int) ((1.0 - ratios[i]) / (1.0 - min_ratio) * 0xF0 + 0xF);
                     }
+                    if(!(tver.contains(edgeBeg[i]) || tver.contains(edgeEnd[i]))) continue;
                     g2.setColor(new Color(c));
                     g2.drawLine(p[edgeBeg[i]].x, (SZ - 1 - p[edgeBeg[i]].y), p[edgeEnd[i]].x, (SZ - 1 - p[edgeEnd[i]].y));
                     if (labels) {
@@ -355,21 +371,30 @@ public class GraphDrawingVis {
                         ch = String.format("%.3f", ratios[i]).toCharArray();
                         g2.drawChars(ch, 0, ch.length, (p[edgeBeg[i]].x + p[edgeEnd[i]].x) / 2 + 2, SZ - 1 - (p[edgeBeg[i]].y + p[edgeEnd[i]].y) / 2 - 2);
                     }
+                    double len = Math.sqrt(p[edgeBeg[i]].dist2(p[edgeEnd[i]]));
+                    double r = len / edgeLen[i];
+                    System.out.println(edgeBeg[i] + " - " + edgeEnd[i] + " ( " + String.format("%.4f", len) + " , " + String.format("%.4f", r) +" )");
                 }
 
                 // vertices (with numbers)
                 g2.setColor(Color.BLACK);
                 for (int i = 0; i < NV; i++) {
+                    if(!(tver.contains(i) || tver.contains(i))) continue;
                     g2.fillOval(p[i].x - 2, SZ - 1 - p[i].y - 2, 5, 5);
-                    if (labels) {
+                    if (false && labels) {
                         ch = (i + "").toCharArray();
                         g2.drawChars(ch, 0, ch.length, p[i].x + 2, SZ - 1 - p[i].y - 2);
                     }
+                    System.out.println(i + " ( " + p[i].x + " , " + p[i].y +" )");
                 }
 
-                ch = String.format("%.6f", score).toCharArray();
                 g2.setFont(new Font("Arial", Font.BOLD, 14));
+                ch = String.format("%.4f", score).toCharArray();
                 g2.drawChars(ch, 0, ch.length, SZ + 10, 200);
+                ch = String.format("%.4f", min_ratio).toCharArray();
+                g2.drawChars(ch, 0, ch.length, SZ + 10, 220);
+                ch = String.format("%.4f", max_ratio).toCharArray();
+                g2.drawChars(ch, 0, ch.length, SZ + 10, 240);
 
                 g.drawImage(bi, 0, 0, SZX + 10, SZY + 10, null);
             } catch (Exception e) {
@@ -414,11 +439,6 @@ public class GraphDrawingVis {
     // ---------------------------------------------------
     public double exec(long seed) {
         //interface for runTest
-        if (vis) {
-            jf = new JFrame();
-            v = new Vis();
-            jf.getContentPane().add(v);
-        }
         if (exec != null) {
             try {
                 Runtime rt = Runtime.getRuntime();
@@ -432,7 +452,7 @@ public class GraphDrawingVis {
             }
         }
         double score = runTest(seed);
-        System.out.println("Score     = " + score);
+        System.out.println("Score     = " + String.format("%.3f", score));
         if (proc != null)
             try {
                 proc.destroy();
@@ -453,7 +473,7 @@ public class GraphDrawingVis {
             if (args[i].equals("-debug")) debug = true;
             if (args[i].equals("-labels")) labels = true;
         }
-        int testcase = 100;
+        int testcase = 10;
         double sum = 0;
         for (long seed = 100, end = seed + testcase; seed < end; ++seed) {
             sum += new GraphDrawingVis().exec(seed);
