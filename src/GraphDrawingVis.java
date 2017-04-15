@@ -137,11 +137,13 @@ public class GraphDrawingVis {
 
             // calculate lengths based on the real values and distort a certain percentage of them
             int distort = rnd.nextInt(100);
-            System.out.println("seed                    = " + seed);
-            System.out.println("Number of vertices NV   = " + NV);
-            System.out.println("Number of edges NE      = " + NE);
-            System.out.println("Distortion percentage   = " + distort);
-            if (debug) System.out.println("Required edge lengths: ");
+            if (debug) {
+                System.out.println("seed                    = " + seed);
+                System.out.println("Number of vertices NV   = " + NV);
+                System.out.println("Number of edges NE      = " + NE);
+                System.out.println("Distortion percentage   = " + distort);
+                System.out.println("Required edge lengths: ");
+            }
 
             edgeLen = new int[NE];
             for (int i = 0; i < NE; ++i) {
@@ -154,7 +156,7 @@ public class GraphDrawingVis {
                 }
                 if (edgeLen[i] < minLen) edgeLen[i] = minLen;
                 if (edgeLen[i] > maxLen) edgeLen[i] = maxLen;
-                if (debug)
+                if (debug && false)
                     System.out.println(edgeBeg[i] + "-" + edgeEnd[i] + " = " + edgeLen[i] + " (dist " + String.format("%.6f", edgeLen[i] / realLen) + ")");
             }
 
@@ -178,20 +180,30 @@ public class GraphDrawingVis {
                 }
 
         // for each edge, calculate the ratio "actual length / required length"
-        min_ratio = -1;
+        min_ratio = 0xffffff;
+        double min1 = 0;
+        double min2 = 0;
         max_ratio = -1;
+        double max1 = 0;
+        double max2 = 0;
         for (int i = 0; i < NE; ++i) {
             double len = Math.sqrt(p[edgeBeg[i]].dist2(p[edgeEnd[i]]));
             double r = len / edgeLen[i];
-            if (min_ratio < 0 || min_ratio > r) min_ratio = r;
-            if (max_ratio < r) max_ratio = r;
+            if (min_ratio > r) {
+                min_ratio = r;
+                min1 = len;
+                min2 = edgeLen[i];
+            }
+            if (max_ratio < r) {
+                max_ratio = r;
+                max1 = len;
+                max2 = edgeLen[i];
+            }
             ratios[i] = r;
-            if (deb) System.out.println(edgeLen[i] + " " + len + " " + r);
+            if (deb && Math.max(len, edgeLen[i]) >= Math.min(len, edgeLen[i])*2) System.out.println(edgeLen[i] + " " + (int)len + " " + String.format("%.3f", r));
         }
-        if (deb) {
-            System.out.println("Min ratio = " + min_ratio);
-            System.out.println("Max ratio = " + max_ratio);
-        }
+        System.out.println("Min ratio = " + String.format("%.2f", min_ratio) + " ( " + (int)min1 + " , " + (int)min2 + " )");
+        System.out.println("Max ratio = " + String.format("%.2f", max_ratio) + " ( " + (int)max1 + " , " + (int)max2 + " )");
         return min_ratio / max_ratio;
     }
 
@@ -243,7 +255,7 @@ public class GraphDrawingVis {
                 draw();
             }
 
-            if (debug) {
+            if (debug && false) {
                 System.out.println("Final vertices coordinates: ");
                 for (int i = 0; i < NV; ++i)
                     System.out.println(i + " - " + p[i]);
@@ -420,7 +432,7 @@ public class GraphDrawingVis {
             }
         }
         double score = runTest(seed);
-        System.out.println("Score                   = " + score);
+        System.out.println("Score     = " + score);
         if (proc != null)
             try {
                 proc.destroy();
@@ -433,19 +445,20 @@ public class GraphDrawingVis {
     // ---------------------------------------------------
     public static void main(String[] args) {
         vis = false;
-        labels = false;
+        labels = true;
+        debug = false;
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-exec")) exec = args[++i];
             if (args[i].equals("-vis")) vis = true;
             if (args[i].equals("-debug")) debug = true;
             if (args[i].equals("-labels")) labels = true;
         }
-        int testcase = 100;
+        int testcase = 20;
         double sum = 0;
         for (long seed = 100, end = seed + testcase; seed < end; ++seed) {
             sum += new GraphDrawingVis().exec(seed);
         }
-        System.out.println("average                 = " + (sum / testcase));
+        System.out.println("average   = " + (sum / testcase));
     }
 
     // ---------------------------------------------------
