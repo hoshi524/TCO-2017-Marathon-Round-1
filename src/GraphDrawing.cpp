@@ -12,7 +12,6 @@ int vertices[max_vertex][2];
 int edges[max_vertex][max_vertex];
 int length[max_vertex][max_vertex];
 double vertex_value[max_vertex];
-int center_dist[max_vertex];
 
 double get_time() {
   unsigned long long a, d;
@@ -67,7 +66,6 @@ class GraphDrawing {
     N = N_;
     E = edges_.size() / 3;
     memset(edges, 0, sizeof(edges));
-    memset(center_dist, 0, sizeof(center_dist));
     for (int i = 0; i < E; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
