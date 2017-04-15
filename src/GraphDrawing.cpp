@@ -41,9 +41,8 @@ double calc_dist(int i, int j) {
 }
 
 double calc_value(int i, int j) {
-  const int d = calc_dist(i, j);
+  const double d = calc_dist(i, j);
   const int len = length[i][j];
-  assert(d > 0);
   double ratio;
   if (d > len) {
     ratio = (double)d / len;
@@ -107,9 +106,9 @@ class GraphDrawing {
           if (a < 0) a = 0;
           int b = pc - dist;
           if (b < 0) b = 0;
-          int c = pr + dist;
+          int c = pr + dist + 1;
           if (c > max_size) c = max_size;
-          int d = pc + dist;
+          int d = pc + dist + 1;
           if (d > max_size) d = max_size;
           while (true) {
             row = a + get_random() % (c - a);
