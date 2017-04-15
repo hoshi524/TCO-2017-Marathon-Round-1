@@ -97,7 +97,6 @@ class GraphDrawing {
       ++iterate;
       for (; (iterate & batch) != batch; ++iterate) {
         const int v = get_random() % N;
-        assert(v != -1);
         const int pr = vertices[v][0];
         const int pc = vertices[v][1];
         int row, col;
