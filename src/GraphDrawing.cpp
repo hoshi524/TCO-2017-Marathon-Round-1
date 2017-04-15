@@ -7,10 +7,10 @@ const int max_vertex = 1000;
 bool used[max_size][max_size];
 int N;
 int E;
-double sum_value;
-int vertices[max_vertex][2];
+int vertex[max_vertex][2];
 int edges[max_vertex][max_vertex];
 int length[max_vertex][max_vertex];
+double sum_value;
 double vertex_value[max_vertex];
 
 double get_time() {
@@ -24,6 +24,12 @@ unsigned get_random() {
   return y ^= (y ^= (y ^= y << 13) >> 17) << 5;
 }
 
+double get_random_double() {
+  static uniform_real_distribution<double> unif(0, 1);
+  static default_random_engine re;
+  return unif(re);
+}
+
 double calc_dist(int i, int j, int x, int y) {
   int a = i - x;
   int b = j - y;
@@ -35,20 +41,19 @@ double calc_center_dist(int i, int j) {
 }
 
 double calc_dist(int i, int j) {
-  return calc_dist(vertices[i][0], vertices[i][1], vertices[j][0],
-                   vertices[j][1]);
+  return calc_dist(vertex[i][0], vertex[i][1], vertex[j][0], vertex[j][1]);
 }
 
 double calc_value(int i, int j) {
   const double d = calc_dist(i, j);
-  const int len = length[i][j];
+  const int l = length[i][j];
   double ratio;
-  if (d > len) {
-    ratio = (double)d / len;
+  if (d > l) {
+    ratio = d / l;
   } else {
-    ratio = (double)len / d;
+    ratio = l / d;
   }
-  return ratio * ratio * ratio * ratio;
+  return ratio * ratio * ratio;
 }
 
 double calc_score(int x) {
@@ -77,29 +82,26 @@ class GraphDrawing {
     }
     memset(used, 0, sizeof(used));
     for (int i = 0; i < N; ++i) {
-      vertices[i][0] = get_random() % max_size;
-      vertices[i][1] = get_random() % max_size;
-      used[vertices[i][0]][vertices[i][1]] = true;
+      vertex[i][0] = get_random() % max_size;
+      vertex[i][1] = get_random() % max_size;
+      used[vertex[i][0]][vertex[i][1]] = true;
     }
     sum_value = 0;
     for (int i = 0; i < N; ++i) {
-      vertex_value[i] = calc_score(i);
-      sum_value += vertex_value[i];
+      sum_value += vertex_value[i] = calc_score(i);
     }
     const int batch = (1 << 12) - 1;
     int iterate = 0;
     while (true) {
       const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
       if (time < 0) break;
-      ++iterate;
-      for (; (iterate & batch) != batch; ++iterate) {
+      while ((++iterate & batch) != batch) {
         const int v = get_random() % N;
-        const int pr = vertices[v][0];
-        const int pc = vertices[v][1];
+        const int pr = vertex[v][0];
+        const int pc = vertex[v][1];
         int row, col;
         {
-          int dist = max_size * time / 2;
-          if (dist < 5) dist = 5;
+          int dist = 10 + (max_size / 2 - 10) * time;
           int a = pr - dist;
           if (a < 0) a = 0;
           int b = pc - dist;
@@ -114,40 +116,41 @@ class GraphDrawing {
             if (!used[row][col]) break;
           }
         }
-        vertices[v][0] = row;
-        vertices[v][1] = col;
-        double ns = calc_score(v);
-        double allow = vertex_value[v] * time / 2;
+        vertex[v][0] = row;
+        vertex[v][1] = col;
+        const double ns = calc_score(v);
+        const double allow =
+            -log(get_random_double()) * vertex_value[v] * time * 0.5;
         if (vertex_value[v] > ns - allow) {
           sum_value += (ns - vertex_value[v]) * 2;
           vertex_value[v] = ns;
           used[row][col] = true;
           used[pr][pc] = false;
 
-          vertices[v][0] = pr;
-          vertices[v][1] = pc;
+          vertex[v][0] = pr;
+          vertex[v][1] = pc;
           for (int i = 1, size = edges[v][0]; i <= size; ++i) {
             const int w = edges[v][i];
             vertex_value[w] -= calc_value(v, w);
           }
 
-          vertices[v][0] = row;
-          vertices[v][1] = col;
+          vertex[v][0] = row;
+          vertex[v][1] = col;
           for (int i = 1, size = edges[v][0]; i <= size; ++i) {
             const int w = edges[v][i];
             vertex_value[w] += calc_value(v, w);
           }
         } else {
-          vertices[v][0] = pr;
-          vertices[v][1] = pc;
+          vertex[v][0] = pr;
+          vertex[v][1] = pc;
         }
       }
     }
-    cerr << "iterate   = " << iterate << endl;
+    // cerr << "iterate   = " << iterate << endl;
     vector<int> ret;
     for (int i = 0; i < N; ++i) {
-      ret.push_back(vertices[i][0]);
-      ret.push_back(vertices[i][1]);
+      ret.push_back(vertex[i][0]);
+      ret.push_back(vertex[i][1]);
     }
     return ret;
   }
