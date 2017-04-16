@@ -9,7 +9,7 @@ int N;
 int E;
 int vertex[max_vertex][2];
 int edges[max_vertex][max_vertex];
-int length[max_vertex][max_vertex];
+double length[max_vertex][max_vertex];
 double sum_value;
 double vertex_value[max_vertex];
 
@@ -46,14 +46,13 @@ double calc_dist(int i, int j) {
 
 double calc_value(int i, int j) {
   const double d = calc_dist(i, j);
-  const int l = length[i][j];
   double ratio;
-  if (d > l) {
-    ratio = d / l;
+  if (d > length[i][j]) {
+    ratio = d / length[i][j];
   } else {
-    ratio = l / d;
+    ratio = length[i][j] / d;
   }
-  return ratio * ratio * ratio;
+  return (ratio * ratio * ratio) - 1.0;
 }
 
 double calc_score(int x) {
