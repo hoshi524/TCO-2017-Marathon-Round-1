@@ -95,7 +95,7 @@ class GraphDrawing {
         const double pr = vertex[v][0];
         const double pc = vertex[v][1];
         const double dist =
-            (10 + (max_size / 2 - 10) * time) * get_random_double();
+            1 + (9 + (max_size / 2 - 9) * time) * get_random_double();
         double row, col;
         while (true) {
           const double dir = PI2 * get_random_double();
