@@ -1,16 +1,15 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+const double PI2 = M_PI * 2.0;
 const double TIME_LIMIT = 1000;
 const int max_size = 701;
 const int max_vertex = 1000;
-bool used[max_size][max_size];
 int N;
 int E;
-int vertex[max_vertex][2];
 int edges[max_vertex][max_vertex];
+double vertex[max_vertex][2];
 double length[max_vertex][max_vertex];
-double sum_value;
 double vertex_value[max_vertex];
 
 double get_time() {
@@ -73,21 +72,18 @@ class GraphDrawing {
     for (int i = 0; i < E; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
-      const int len = edges_[i * 3 + 2];
       edges[v1][++edges[v1][0]] = v2;
       edges[v2][++edges[v2][0]] = v1;
-      length[v2][v1] = len;
-      length[v1][v2] = len;
+      const double len = edges_[i * 3 + 2];
+      length[v2][v1] = len * 0.9;
+      length[v1][v2] = len * 0.9;
     }
-    memset(used, 0, sizeof(used));
     for (int i = 0; i < N; ++i) {
       vertex[i][0] = get_random() % max_size;
       vertex[i][1] = get_random() % max_size;
-      used[vertex[i][0]][vertex[i][1]] = true;
     }
-    sum_value = 0;
     for (int i = 0; i < N; ++i) {
-      sum_value += vertex_value[i] = calc_score(i);
+      vertex_value[i] = calc_score(i);
     }
     const int batch = (1 << 12) - 1;
     int iterate = 0;
@@ -96,24 +92,16 @@ class GraphDrawing {
       if (time < 0) break;
       while ((++iterate & batch) != batch) {
         const int v = get_random() % N;
-        const int pr = vertex[v][0];
-        const int pc = vertex[v][1];
-        int row, col;
-        {
-          int dist = 10 + (max_size / 2 - 10) * time;
-          int a = pr - dist;
-          if (a < 0) a = 0;
-          int b = pc - dist;
-          if (b < 0) b = 0;
-          int c = pr + dist + 1;
-          if (c > max_size) c = max_size;
-          int d = pc + dist + 1;
-          if (d > max_size) d = max_size;
-          while (true) {
-            row = a + get_random() % (c - a);
-            col = b + get_random() % (d - b);
-            if (!used[row][col]) break;
-          }
+        const double pr = vertex[v][0];
+        const double pc = vertex[v][1];
+        const double dist =
+            (10 + (max_size / 2 - 10) * time) * get_random_double();
+        double row, col;
+        while (true) {
+          const double dir = PI2 * get_random_double();
+          row = pr + dist * sin(dir);
+          col = pc + dist * cos(dir);
+          if (0 < row && row < max_size && 0 < col && col < max_size) break;
         }
         vertex[v][0] = row;
         vertex[v][1] = col;
@@ -121,18 +109,13 @@ class GraphDrawing {
         const double allow =
             -log(get_random_double()) * vertex_value[v] * time * 0.5;
         if (vertex_value[v] > ns - allow) {
-          sum_value += (ns - vertex_value[v]) * 2;
           vertex_value[v] = ns;
-          used[row][col] = true;
-          used[pr][pc] = false;
-
           vertex[v][0] = pr;
           vertex[v][1] = pc;
           for (int i = 1, size = edges[v][0]; i <= size; ++i) {
             const int w = edges[v][i];
             vertex_value[w] -= calc_value(v, w);
           }
-
           vertex[v][0] = row;
           vertex[v][1] = col;
           for (int i = 1, size = edges[v][0]; i <= size; ++i) {
@@ -146,10 +129,31 @@ class GraphDrawing {
       }
     }
     // cerr << "iterate   = " << iterate << endl;
+
     vector<int> ret;
+    bool used[max_size][max_size];
+    memset(used, 0, sizeof(used));
+    struct V {
+      double dist;
+      int row, col;
+    };
     for (int i = 0; i < N; ++i) {
-      ret.push_back(vertex[i][0]);
-      ret.push_back(vertex[i][1]);
+      const double r = vertex[i][0];
+      const double c = vertex[i][1];
+      vector<V> tmp;
+      for (int row = max((int)r - 3, 0), rows = min((int)r + 3, max_size - 1);
+           row <= rows; ++row) {
+        for (int col = max((int)c - 3, 0), cols = min((int)c + 3, max_size - 1);
+             col <= cols; ++col) {
+          if (used[row][col]) continue;
+          tmp.push_back((V){calc_dist(r, c, row, col), row, col});
+        }
+      }
+      sort(tmp.begin(), tmp.end(),
+           [](const V& a, const V& b) { return a.dist < b.dist; });
+      used[tmp[0].row][tmp[0].col] = true;
+      ret.push_back(tmp[0].row);
+      ret.push_back(tmp[0].col);
     }
     return ret;
   }
