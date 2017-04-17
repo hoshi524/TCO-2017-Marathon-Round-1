@@ -43,67 +43,6 @@ double calc_dist(int i, int j) {
   return calc_dist(vertex[i][0], vertex[i][1], vertex[j][0], vertex[j][1]);
 }
 
-tuple<double, double, double, double> calc_intersection(double x1, double y1,
-                                                        double r1, double x2,
-                                                        double y2, double r2) {
-  assert(r1 > 0.1);
-  assert(r2 > 0.1);
-  double mx = x2 - x1;
-  double my = y2 - y1;
-  double d = sqrt(mx * mx + my * my);
-  double a = atan2(my, mx);
-  double t = (d * d + r1 * r1 - r2 * r2) / (2 * d);
-  double c = acos(t / r1);
-  // assert(r1 + r2 >= d && max(r1, r2) <= min(r1, r2) + d);
-  return forward_as_tuple(x1 + r1 * cos(a + c), y1 + r1 * sin(a + c),
-                          x1 + r1 * cos(a - c), y1 + r1 * sin(a - c));
-}
-
-tuple<double, double, double> calc_position(double* circle, int size) {
-  int vs = 0;
-  double vertex[size * size][2];
-  for (int i = 0; i < size; ++i) {
-    for (int j = i + 1; j < size; ++j) {
-      double x1, y1, x2, y2;
-      tie(x1, y1, x2, y2) = calc_intersection(
-          circle[i * 3 + 0], circle[i * 3 + 1], circle[i * 3 + 2],
-          circle[j * 3 + 0], circle[j * 3 + 1], circle[j * 3 + 2]);
-      vertex[vs][0] = x1;
-      vertex[vs][1] = y1;
-      ++vs;
-      vertex[vs][0] = x2;
-      vertex[vs][1] = y2;
-      ++vs;
-    }
-  }
-  double ratio[size * size];
-  for (int i = 0; i < vs; ++i) {
-    ratio[i] = 1.0;
-  }
-  for (int j = 0; j < size; ++j) {
-    const double cx = circle[j * 3 + 0];
-    const double cy = circle[j * 3 + 1];
-    const double cd = circle[j * 3 + 2];
-    for (int i = 0; i < vs; ++i) {
-      double d = calc_dist(vertex[i][0], vertex[i][1], cx, cy);
-      double r = d < cd ? d / cd : cd / d;
-      if (ratio[i] > r)
-        ratio[i] = r;  //   if (0 < row && row < max_size && 0 < col && col <
-                       //   max_size) break;
-                       // }
-    }
-  }
-  double max = 0.0;
-  int vi = -1;
-  for (int i = 0; i < vs; ++i) {
-    if (max < ratio[i]) {
-      max = ratio[i];
-      vi = i;
-    }
-  }
-  return forward_as_tuple(max, vertex[vi][0], vertex[vi][1]);
-}
-
 tuple<int, int> select_vertex(set<int>& selected) {
   int vertex = -1, contain = 0, edge = 0;
   for (int v = 0; v < N; ++v) {
@@ -162,43 +101,6 @@ class GraphDrawing {
       length[v1][v2] = len;
     }
     set<int> selected;
-    if (false) {
-      int cv, v1, v2, c;
-
-      tie(v1, c) = select_vertex(selected);
-      selected.insert(v1);
-      vertex[v1][0] = 0;
-      vertex[v1][1] = 0;
-
-      tie(v2, c) = select_vertex(selected);
-      assert(c == 1);
-      selected.insert(v2);
-      vertex[v2][0] = length[v1][v2];
-      vertex[v2][1] = 0;
-
-      double circle[max_vertex * 3];
-      while (true) {
-        tie(cv, c) = select_vertex(selected);
-        const int size = 3 < selected.size() ? 3 : selected.size();
-        if (c < size) break;
-        int vi = 0;
-        for (int v : selected) {
-          if (length[v][cv] < 0) continue;
-          circle[vi * 3 + 0] = vertex[v][0];
-          circle[vi * 3 + 1] = vertex[v][1];
-          circle[vi * 3 + 2] = length[v][cv];
-          ++vi;
-        }
-        // cerr << vi << " " << c << endl;
-        // assert(vi == c);
-        selected.insert(cv);
-        double ratio, row, col;
-        tie(ratio, row, col) = calc_position(circle, vi);
-        vertex[cv][0] = row;
-        vertex[cv][1] = col;
-      }
-      cerr << "selected  = " << selected.size() << endl;
-    }
     for (int i = 0; i < N; ++i) {
       if (selected.count(i)) continue;
       vertex[i][0] = get_random() % max_size;
@@ -264,66 +166,6 @@ class GraphDrawing {
         vertex[i][0] = (vertex[i][0] - min_row) * ratio;
         vertex[i][1] = (vertex[i][1] - min_col) * ratio;
       }
-    };
-    if (false) {
-      struct V {
-        int i;
-        double len;
-      };
-      vector<V> vertex_list;
-      for (int i = 0; i < N; ++i) {
-        V v = (V){i, 1e10};
-        for (int j = 1; j <= edges[i][0]; ++j) {
-          double len = length[i][edges[i][j]];
-          if (v.len > len) v.len = len;
-        }
-        vertex_list.push_back(v);
-      }
-      sort(vertex_list.begin(), vertex_list.end(),
-           [](const V& a, const V& b) { return a.len < b.len; });
-
-      vector<int> ret(N * 2);
-      bool used[max_size][max_size];
-      memset(used, 0, sizeof(used));
-      for (int i = 0; i < N; ++i) {
-        const int vi = vertex_list[i].i;
-        const double r = vertex[vi][0];
-        const double c = vertex[vi][1];
-        struct P {
-          int r, c;
-          double ratio;
-        };
-        vector<P> point_list;
-        for (int row = max((int)r - 1, 0), rows = min((int)r + 1, max_size - 1);
-             row <= rows; ++row) {
-          for (int col = max((int)c - 1, 0),
-                   cols = min((int)c + 1, max_size - 1);
-               col <= cols; ++col) {
-            if (used[row][col]) continue;
-            point_list.push_back((P){row, col, 1.0});
-          }
-        }
-        assert(point_list.size() > 0);
-        P best = (P){-1, -1, 0};
-        for (auto p : point_list) {
-          for (int j = 0; j < i; ++j) {
-            const double ln = length[vi][vertex_list[j].i];
-            if (ln < 0) continue;
-            const double jr = vertex[vertex_list[j].i][0];
-            const double jc = vertex[vertex_list[j].i][1];
-            const double jd = calc_dist(p.r, p.c, jr, jc);
-            const double ratio = jd < ln ? jd / ln : ln / jd;
-            if (p.ratio > ratio) p.ratio = ratio;
-          }
-          if (best.ratio < p.ratio) best = p;
-        }
-        used[best.r][best.c] = true;
-        ret[vi * 2 + 0] = best.r;
-        ret[vi * 2 + 1] = best.c;
-        vertex[vi][0] = best.r;
-        vertex[vi][1] = best.c;
-      }
-      return ret;
     };
     {
       vector<int> ret;
