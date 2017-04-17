@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const double TIME_LIMIT = 10000;
+const double TIME_LIMIT = 1000;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
@@ -110,14 +110,10 @@ class GraphDrawing {
         int row, col;
         {
           const int dist = 8 + (max_size / 3 - 8) * time;
-          int a = pr - dist;
-          if (a < 0) a = 0;
-          int b = pc - dist;
-          if (b < 0) b = 0;
-          int c = pr + dist + 1;
-          if (c > max_size) c = max_size;
-          int d = pc + dist + 1;
-          if (d > max_size) d = max_size;
+          const int a = max(pr - dist, 0);
+          const int b = max(pc - dist, 0);
+          const int c = min(pr + dist + 1, max_size);
+          const int d = min(pc + dist + 1, max_size);
           row = a + get_random() % (c - a);
           col = b + get_random() % (d - b);
         }
