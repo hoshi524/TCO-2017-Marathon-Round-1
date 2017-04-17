@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const double TIME_LIMIT = 1000;
+const double TIME_LIMIT = 10000;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
@@ -90,12 +90,26 @@ class GraphDrawing {
       const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
       if (time < 0) break;
       while ((++iterate & batch) != batch) {
+        auto update_vertex_value = [](int v, int pr, int pc, int nr, int nc) {
+          vertex[v][0] = pr;
+          vertex[v][1] = pc;
+          for (int i = 1, size = edges[v][0]; i <= size; ++i) {
+            const int w = edges[v][i];
+            vertex_value[w] -= calc_value(v, w);
+          }
+          vertex[v][0] = nr;
+          vertex[v][1] = nc;
+          for (int i = 1, size = edges[v][0]; i <= size; ++i) {
+            const int w = edges[v][i];
+            vertex_value[w] += calc_value(v, w);
+          }
+        };
         const int v = get_random() % N;
         const int pr = vertex[v][0];
         const int pc = vertex[v][1];
         int row, col;
         {
-          int dist = 8 + (max_size / 2 - 8) * time;
+          const int dist = 8 + (max_size / 3 - 8) * time;
           int a = pr - dist;
           if (a < 0) a = 0;
           int b = pc - dist;
@@ -114,18 +128,7 @@ class GraphDrawing {
             -log(get_random_double()) * vertex_value[v] * time * 0.5;
         if (vertex_value[v] > ns - allow) {
           vertex_value[v] = ns;
-          vertex[v][0] = pr;
-          vertex[v][1] = pc;
-          for (int i = 1, size = edges[v][0]; i <= size; ++i) {
-            const int w = edges[v][i];
-            vertex_value[w] -= calc_value(v, w);
-          }
-          vertex[v][0] = row;
-          vertex[v][1] = col;
-          for (int i = 1, size = edges[v][0]; i <= size; ++i) {
-            const int w = edges[v][i];
-            vertex_value[w] += calc_value(v, w);
-          }
+          update_vertex_value(v, pr, pc, row, col);
         } else {
           vertex[v][0] = pr;
           vertex[v][1] = pc;
