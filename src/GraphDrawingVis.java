@@ -238,6 +238,7 @@ public class GraphDrawingVis {
                     ret = plot(NV, edgePar);
                 } catch (Exception e) {
                     addFatalError("Failed to get result from plot.");
+                    e.printStackTrace();
                     return 0;
                 }
 
