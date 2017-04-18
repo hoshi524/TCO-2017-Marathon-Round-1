@@ -36,13 +36,13 @@ double calc_dist(double i, double j, double x, double y) {
 
 double calc_score(int x, double r, double c, double time) {
   double sum = 0.0;
-  double max = 1.0;
+  double max = 0.0;
   for (int i = 1; i <= edges[x][0]; ++i) {
     const int y = edges[x][i];
     const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
     const double l = length[x][y];
     const double r = d > l ? d / l : l / d;
-    sum += (r * r * r) - 1.0;
+    sum += (r * r) - 1.0;
     if (max < r) max = r;
   }
   return sum * time + (max - 1.0) * (1.0 - time);
