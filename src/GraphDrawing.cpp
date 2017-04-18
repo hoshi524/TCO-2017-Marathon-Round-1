@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const double TIME_LIMIT = 9000;
+const double TIME_LIMIT = 1000;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
@@ -28,10 +28,10 @@ double get_random_double() {
   return unif(re);
 }
 
-double calc_dist(int i, int j, int x, int y) {
-  int a = i - x;
-  int b = j - y;
-  return sqrt((double)(a * a + b * b));
+double calc_dist(double i, double j, double x, double y) {
+  double a = i - x;
+  double b = j - y;
+  return sqrt(a * a + b * b);
 }
 
 double calc_dist(int i, int j) {
@@ -57,25 +57,27 @@ double calc_score(int x) {
   return sum;
 }
 
+double calc_min_ratio(int i, double r, double c) {
+  double ratio = 1.0;
+  for (int j = 1; j <= edges[i][0]; ++j) {
+    double jr = vertex[edges[i][j]][0];
+    double jc = vertex[edges[i][j]][1];
+    double jd = calc_dist(r, c, jr, jc);
+    double jl = length[i][edges[i][j]];
+    double t = jd < jl ? jd / jl : jl / jd;
+    if (ratio > t) ratio = t;
+  }
+  return ratio;
+}
+
 void slow_optimize() {
   struct P {
     int id;
     double value;
   };
   P p[N];
-  auto calc_value = [](int e, int r, int c) {
-    double res = 1.0;
-    for (int i = 1; i <= edges[e][0]; ++i) {
-      const int x = edges[e][i];
-      const double d = calc_dist(r, c, vertex[x][0], vertex[x][1]);
-      const double l = length[e][x];
-      const double ratio = d < l ? d / l : l / d;
-      if (res > ratio) res = ratio;
-    }
-    return res;
-  };
   for (int i = 0; i < N; ++i) {
-    p[i] = (P){i, calc_value(i, vertex[i][0], vertex[i][1])};
+    p[i] = (P){i, calc_min_ratio(i, vertex[i][0], vertex[i][1])};
   }
   sort(p, p + N, [](const P& a, const P& b) { return a.value < b.value; });
   for (int i = 0; i < N; ++i) {
@@ -84,7 +86,7 @@ void slow_optimize() {
     int mr = -1, mc = -1;
     for (int r = range / 2; r < max_size; r += range) {
       for (int c = range / 2; c < max_size; c += range) {
-        double v = calc_value(p[i].id, r, c);
+        double v = calc_min_ratio(p[i].id, r, c);
         if (cv < v) {
           cv = v;
           mr = r;
@@ -96,7 +98,7 @@ void slow_optimize() {
          r <= rs; ++r) {
       for (int c = max(mc - range / 2, 0), cs = min(r + range, max_size - 1);
            c <= cs; ++c) {
-        double v = calc_value(p[i].id, r, c);
+        double v = calc_min_ratio(p[i].id, r, c);
         if (cv < v) {
           cv = v;
           mr = r;
@@ -198,25 +200,14 @@ class GraphDrawing {
             Move move = (Move){-1, -1, -1, 1e10};
             for (int i = 0; i < N; ++i) {
               if (r == vertex[i][0] && c == vertex[i][1]) {
-                auto minRatio = [](int i, int r, int c) {
-                  double ratio = 1.0;
-                  for (int j = 1; j <= edges[i][0]; ++j) {
-                    double jr = vertex[edges[i][j]][0];
-                    double jc = vertex[edges[i][j]][1];
-                    double jd = calc_dist(r, c, jr, jc);
-                    double jl = length[i][edges[i][j]];
-                    double t = jd < jl ? jd / jl : jl / jd;
-                    if (ratio > t) ratio = t;
-                  }
-                  return ratio;
-                };
-                double ratio = minRatio(i, r, c);
-                for (int nr = max(r - 1, 0), nrs = min(r + 1, max_size - 1);
+                const int range = 2;
+                double ratio = calc_min_ratio(i, r, c);
+                for (int nr = max(r - range, 0), nrs = min(r + range, max_size - 1);
                      nr <= nrs; ++nr) {
-                  for (int nc = max(c - 1, 0), ncs = min(c + 1, max_size - 1);
+                  for (int nc = max(c - range, 0), ncs = min(c + range, max_size - 1);
                        nc <= ncs; ++nc) {
                     if (count[nr][nc] == 0) {
-                      double v = minRatio(i, nr, nc) - ratio;
+                      double v = calc_min_ratio(i, nr, nc) - ratio;
                       if (move.ratio > v) {
                         move = (Move){i, nr, nc, v};
                       }
