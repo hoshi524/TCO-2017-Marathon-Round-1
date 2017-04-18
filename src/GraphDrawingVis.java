@@ -474,7 +474,7 @@ public class GraphDrawingVis {
             if (args[i].equals("-debug")) debug = true;
             if (args[i].equals("-labels")) labels = true;
         }
-        int testcase = 10;
+        int testcase = 100;
         double sum = 0;
         for (long seed = 100, end = seed + testcase; seed < end; ++seed) {
             sum += new GraphDrawingVis().exec(seed);

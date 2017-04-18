@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const double TIME_LIMIT = 1000;
+const double TIME_LIMIT = 950;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
@@ -33,73 +33,30 @@ double calc_dist(double i, double j, double x, double y) {
   return sqrt(a * a + b * b);
 }
 
-double calc_score(int x) {
+double calc_score(int x, double r, double c, double time) {
   double sum = 0.0;
+  double max = 1.0;
   for (int i = 1; i <= edges[x][0]; ++i) {
     const int y = edges[x][i];
-    const double d =
-        calc_dist(vertex[x][0], vertex[x][1], vertex[y][0], vertex[y][1]);
+    const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
     const double l = length[x][y];
     const double r = d > l ? d / l : l / d;
     sum += (r * r * r) - 1.0;
+    if (max < r) max = r;
   }
-  return sum;
+  return sum * time + max * (1.0 - time);
 }
 
-double calc_min_ratio(int i, double r, double c) {
-  double ratio = 1.0;
-  for (int j = 1; j <= edges[i][0]; ++j) {
-    double jr = vertex[edges[i][j]][0];
-    double jc = vertex[edges[i][j]][1];
-    double jd = calc_dist(r, c, jr, jc);
-    double jl = length[i][edges[i][j]];
-    double t = jd < jl ? jd / jl : jl / jd;
-    if (ratio > t) ratio = t;
+double calc_max_ratio(int x, double r, double c) {
+  double max = 1.0;
+  for (int i = 1; i <= edges[x][0]; ++i) {
+    const int y = edges[x][i];
+    const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
+    const double l = length[x][y];
+    const double r = d > l ? d / l : l / d;
+    if (max < r) max = r;
   }
-  return ratio;
-}
-
-void slow_optimize() {
-  struct P {
-    int id;
-    double value;
-  };
-  P p[N];
-  for (int i = 0; i < N; ++i) {
-    p[i] = (P){i, calc_min_ratio(i, vertex[i][0], vertex[i][1])};
-  }
-  sort(p, p + N, [](const P& a, const P& b) { return a.value < b.value; });
-  for (int i = 0; i < N; ++i) {
-    const int range = 28;
-    double cv = 0.0;
-    int mr = -1, mc = -1;
-    for (int r = range / 2; r < max_size; r += range) {
-      for (int c = range / 2; c < max_size; c += range) {
-        const double v = calc_min_ratio(p[i].id, r, c);
-        if (cv < v) {
-          cv = v;
-          mr = r;
-          mc = c;
-        }
-      }
-    }
-    for (int r = max(mr - range / 2, 0), rs = min(r + range, max_size - 1);
-         r <= rs; ++r) {
-      for (int c = max(mc - range / 2, 0), cs = min(r + range, max_size - 1);
-           c <= cs; ++c) {
-        const double v = calc_min_ratio(p[i].id, r, c);
-        if (cv < v) {
-          cv = v;
-          mr = r;
-          mc = c;
-        }
-      }
-    }
-    if (p[i].value < cv) {
-      vertex[p[i].id][0] = mr;
-      vertex[p[i].id][1] = mc;
-    }
-  }
+  return max;
 }
 
 class GraphDrawing {
@@ -141,19 +98,16 @@ class GraphDrawing {
           row = a + get_random() % (c - a);
           col = b + get_random() % (d - b);
         }
-        const double ps = calc_score(v);
-        vertex[v][0] = row;
-        vertex[v][1] = col;
-        const double ns = calc_score(v);
+        const double ps = calc_score(v, pr, pc, time);
+        const double ns = calc_score(v, row, col, time);
         const double allow = max(-log(get_random_double()) * ps * time, 0.0);
-        if (ps < ns - allow) {
-          vertex[v][0] = pr;
-          vertex[v][1] = pc;
+        if (ps > ns - allow) {
+          vertex[v][0] = row;
+          vertex[v][1] = col;
         }
       }
     }
     // cerr << "iterate   = " << iterate << endl;
-    // slow_optimize();
     {
       int count[max_size][max_size];
       memset(count, 0, sizeof(count));
@@ -170,8 +124,8 @@ class GraphDrawing {
             Move move = (Move){-1, -1, -1, 1e10};
             for (int i = 0; i < N; ++i) {
               if (r == vertex[i][0] && c == vertex[i][1]) {
-                const int range = 2;
-                double ratio = calc_min_ratio(i, r, c);
+                const int range = 10;
+                double ratio = calc_max_ratio(i, r, c);
                 for (int nr = max(r - range, 0),
                          nrs = min(r + range, max_size - 1);
                      nr <= nrs; ++nr) {
@@ -179,7 +133,7 @@ class GraphDrawing {
                            ncs = min(c + range, max_size - 1);
                        nc <= ncs; ++nc) {
                     if (count[nr][nc] == 0) {
-                      const double v = calc_min_ratio(i, nr, nc) - ratio;
+                      const double v = calc_max_ratio(i, nr, nc) - ratio;
                       if (move.ratio > v) {
                         move = (Move){i, nr, nc, v};
                       }
