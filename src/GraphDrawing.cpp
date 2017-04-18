@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const double TIME_LIMIT = 1000;
+const double TIME_LIMIT = 9000;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
@@ -34,10 +34,6 @@ double calc_dist(int i, int j, int x, int y) {
   return sqrt((double)(a * a + b * b));
 }
 
-double calc_center_dist(int i, int j) {
-  return calc_dist(max_size / 2, max_size / 2, i, j);
-}
-
 double calc_dist(int i, int j) {
   return calc_dist(vertex[i][0], vertex[i][1], vertex[j][0], vertex[j][1]);
 }
@@ -59,6 +55,60 @@ double calc_score(int x) {
     sum += calc_value(x, edges[x][i]);
   }
   return sum;
+}
+
+void slow_optimize() {
+  struct P {
+    int id;
+    double value;
+  };
+  P p[N];
+  auto calc_value = [](int e, int r, int c) {
+    double res = 1.0;
+    for (int i = 1; i <= edges[e][0]; ++i) {
+      const int x = edges[e][i];
+      const double d = calc_dist(r, c, vertex[x][0], vertex[x][1]);
+      const double l = length[e][x];
+      const double ratio = d < l ? d / l : l / d;
+      if (res > ratio) res = ratio;
+    }
+    return res;
+  };
+  for (int i = 0; i < N; ++i) {
+    p[i] = (P){i, calc_value(i, vertex[i][0], vertex[i][1])};
+  }
+  sort(p, p + N, [](const P& a, const P& b) { return a.value < b.value; });
+  for (int i = 0; i < N; ++i) {
+    const int range = 28;
+    double cv = 0.0;
+    int mr = -1, mc = -1;
+    for (int r = range / 2; r < max_size; r += range) {
+      for (int c = range / 2; c < max_size; c += range) {
+        double v = calc_value(p[i].id, r, c);
+        if (cv < v) {
+          cv = v;
+          mr = r;
+          mc = c;
+        }
+      }
+    }
+    for (int r = max(mr - range / 2, 0), rs = min(r + range, max_size - 1);
+         r <= rs; ++r) {
+      for (int c = max(mc - range / 2, 0), cs = min(r + range, max_size - 1);
+           c <= cs; ++c) {
+        double v = calc_value(p[i].id, r, c);
+        if (cv < v) {
+          cv = v;
+          mr = r;
+          mc = c;
+        }
+      }
+    }
+    if (p[i].value < cv) {
+      vertex[p[i].id][0] = mr;
+      vertex[p[i].id][1] = mc;
+    }
+  }
 }
 
 class GraphDrawing {
@@ -109,7 +159,7 @@ class GraphDrawing {
         const int pc = vertex[v][1];
         int row, col;
         {
-          const int dist = 8 + (max_size / 3 - 8) * time;
+          const int dist = 10 + (max_size / 3 - 10) * time;
           const int a = max(pr - dist, 0);
           const int b = max(pc - dist, 0);
           const int c = min(pr + dist + 1, max_size);
@@ -120,8 +170,7 @@ class GraphDrawing {
         vertex[v][0] = row;
         vertex[v][1] = col;
         const double ns = calc_score(v);
-        const double allow =
-            -log(get_random_double()) * vertex_value[v] * time * 0.5;
+        const double allow = -log(get_random_double()) * vertex_value[v] * time;
         if (vertex_value[v] > ns - allow) {
           vertex_value[v] = ns;
           update_vertex_value(v, pr, pc, row, col);
@@ -132,6 +181,7 @@ class GraphDrawing {
       }
     }
     // cerr << "iterate   = " << iterate << endl;
+    slow_optimize();
     {
       int count[max_size][max_size];
       memset(count, 0, sizeof(count));
