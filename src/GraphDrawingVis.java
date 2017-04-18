@@ -213,8 +213,8 @@ public class GraphDrawingVis {
         tver.add(edgeEnd[mini]);
         tver.add(edgeBeg[maxi]);
         tver.add(edgeEnd[maxi]);
-        System.out.println("Min ratio = " + String.format("%.2f", min_ratio) + " ( " + (int)min1 + " , " + (int)min2 + " )");
-        System.out.println("Max ratio = " + String.format("%.2f", max_ratio) + " ( " + (int)max1 + " , " + (int)max2 + " )");
+        System.out.println("Min ratio = " + String.format("%.2f", min_ratio) + " ( " + String.format("%.2f", min1) + " , " + String.format("%.2f", min2) + " )");
+        System.out.println("Max ratio = " + String.format("%.2f", max_ratio) + " ( " + String.format("%.2f", max1) + " , " + String.format("%.2f", max2) + " )");
         return min_ratio / max_ratio;
     }
 

@@ -1,13 +1,14 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const double TIME_LIMIT = 970;
+const double PI2 = M_PI * 2.0;
+const double TIME_LIMIT = 9700;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
 int E;
-int vertex[max_vertex][2];
 int edges[max_vertex][max_vertex];
+double vertex[max_vertex][2];
 double length[max_vertex][max_vertex];
 
 double get_time() {
@@ -44,7 +45,7 @@ double calc_score(int x, double r, double c, double time) {
     sum += (r * r * r) - 1.0;
     if (max < r) max = r;
   }
-  return sum * time + max * (1.0 - time);
+  return sum * time + (max - 1.0) * (1.0 - time);
 }
 
 class GraphDrawing {
@@ -57,9 +58,9 @@ class GraphDrawing {
     for (int i = 0; i < E; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
-      const int len = edges_[i * 3 + 2];
       edges[v1][++edges[v1][0]] = v2;
       edges[v2][++edges[v2][0]] = v1;
+      const double len = edges_[i * 3 + 2];
       length[v2][v1] = len;
       length[v1][v2] = len;
     }
@@ -67,28 +68,27 @@ class GraphDrawing {
       vertex[i][0] = get_random() % max_size;
       vertex[i][1] = get_random() % max_size;
     }
-    const int batch = (1 << 12) - 1;
+    const int batch = (1 << 11) - 1;
     int iterate = 0;
     while (true) {
       const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
       if (time < 0) break;
       while ((++iterate & batch) != batch) {
         const int v = get_random() % N;
-        const int pr = vertex[v][0];
-        const int pc = vertex[v][1];
-        int row, col;
-        {
-          const int dist = 10 + (max_size / 2 - 10) * time;
-          const int a = max(pr - dist, 0);
-          const int b = max(pc - dist, 0);
-          const int c = min(pr + dist + 1, max_size);
-          const int d = min(pc + dist + 1, max_size);
-          row = a + get_random() % (c - a);
-          col = b + get_random() % (d - b);
+        const double pr = vertex[v][0];
+        const double pc = vertex[v][1];
+        double row, col;
+        while (true) {
+          const double dist =
+              1 + (9 + (max_size / 2 - 9) * time) * get_random_double();
+          const double dir = PI2 * get_random_double();
+          row = pr + dist * sin(dir);
+          col = pc + dist * cos(dir);
+          if (0 < row && row < max_size && 0 < col && col < max_size) break;
         }
         const double ps = calc_score(v, pr, pc, time);
         const double ns = calc_score(v, row, col, time);
-        const double allow = max(-log(get_random_double()) * ps * time, 0.0);
+        const double allow = -log(get_random_double()) * ps * time * 0.5;
         if (ps > ns - allow) {
           vertex[v][0] = row;
           vertex[v][1] = col;
@@ -97,53 +97,71 @@ class GraphDrawing {
     }
     // cerr << "iterate   = " << iterate << endl;
     {
-      int count[max_size][max_size];
-      memset(count, 0, sizeof(count));
+      double min_row = 1e10, max_row = -1e10;
+      double min_col = 1e10, max_col = -1e10;
       for (int i = 0; i < N; ++i) {
-        ++count[vertex[i][0]][vertex[i][1]];
+        const double r = vertex[i][0];
+        const double c = vertex[i][1];
+        if (min_row > r) min_row = r;
+        if (max_row < r) max_row = r;
+        if (min_col > c) min_col = c;
+        if (max_col < c) max_col = c;
       }
-      for (int r = 0; r < max_size; ++r) {
-        for (int c = 0; c < max_size; ++c) {
-          while (count[r][c] > 1) {
-            struct Move {
-              int id, row, col;
-              double ratio;
-            };
-            Move move = (Move){-1, -1, -1, 1e10};
-            for (int i = 0; i < N; ++i) {
-              if (r == vertex[i][0] && c == vertex[i][1]) {
-                const int range = 10;
-                double ratio = calc_score(i, r, c, 0);
-                for (int nr = max(r - range, 0),
-                         nrs = min(r + range, max_size - 1);
-                     nr <= nrs; ++nr) {
-                  for (int nc = max(c - range, 0),
-                           ncs = min(c + range, max_size - 1);
-                       nc <= ncs; ++nc) {
-                    if (count[nr][nc] == 0) {
-                      const double v = calc_score(i, nr, nc, 0) - ratio;
-                      if (move.ratio > v) {
-                        move = (Move){i, nr, nc, v};
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            --count[r][c];
-            vertex[move.id][0] = move.row;
-            vertex[move.id][1] = move.col;
-            ++count[move.row][move.col];
-          }
-        }
+      double ratio = min((max_size - 1) / (max_row - min_row),
+                         (max_size - 1) / (max_col - min_col));
+      for (int i = 0; i < N; ++i) {
+        vertex[i][0] = (vertex[i][0] - min_row) * ratio;
+        vertex[i][1] = (vertex[i][1] - min_col) * ratio;
       }
     };
-    vector<int> ret;
-    for (int i = 0; i < N; ++i) {
-      ret.push_back(vertex[i][0]);
-      ret.push_back(vertex[i][1]);
-    }
-    return ret;
+    {
+      struct Vertex {
+        int id;
+        double len;
+      };
+      vector<Vertex> v_vector;
+      for (int i = 0; i < N; ++i) {
+        Vertex v = (Vertex){i, 1e10};
+        for (int j = 1; j <= edges[i][0]; ++j) {
+          double len = length[i][edges[i][j]];
+          if (v.len > len) v.len = len;
+        }
+        v_vector.push_back(v);
+      }
+      sort(v_vector.begin(), v_vector.end(),
+           [](const Vertex& a, const Vertex& b) { return a.len < b.len; });
+      vector<int> ret(N * 2);
+      bool used[max_size][max_size];
+      memset(used, 0, sizeof(used));
+      for (auto v : v_vector) {
+        const double pr = vertex[v.id][0];
+        const double pc = vertex[v.id][1];
+        double value = 1e10;
+        int row = -1, col = -1;
+        const int range = 5;
+        for (int r = max((int)pr - range, 0),
+                 rs = min((int)pr + range, max_size - 1);
+             r <= rs; ++r) {
+          for (int c = max((int)pc - range, 0),
+                   cs = min((int)pc + range, max_size - 1);
+               c <= cs; ++c) {
+            if (used[r][c]) continue;
+            const double ts = calc_score(v.id, r, c, 0);
+            if (value > ts) {
+              value = ts;
+              row = r;
+              col = c;
+            }
+          }
+        }
+        vertex[v.id][0] = row;
+        vertex[v.id][1] = col;
+        ret[v.id * 2 + 0] = row;
+        ret[v.id * 2 + 1] = col;
+        used[row][col] = true;
+      }
+      return ret;
+    };
   }
 };
 
