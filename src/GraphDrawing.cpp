@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const double TIME_LIMIT = 950;
+const double TIME_LIMIT = 970;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
@@ -45,18 +45,6 @@ double calc_score(int x, double r, double c, double time) {
     if (max < r) max = r;
   }
   return sum * time + max * (1.0 - time);
-}
-
-double calc_max_ratio(int x, double r, double c) {
-  double max = 1.0;
-  for (int i = 1; i <= edges[x][0]; ++i) {
-    const int y = edges[x][i];
-    const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-    const double l = length[x][y];
-    const double r = d > l ? d / l : l / d;
-    if (max < r) max = r;
-  }
-  return max;
 }
 
 class GraphDrawing {
@@ -125,7 +113,7 @@ class GraphDrawing {
             for (int i = 0; i < N; ++i) {
               if (r == vertex[i][0] && c == vertex[i][1]) {
                 const int range = 10;
-                double ratio = calc_max_ratio(i, r, c);
+                double ratio = calc_score(i, r, c, 0);
                 for (int nr = max(r - range, 0),
                          nrs = min(r + range, max_size - 1);
                      nr <= nrs; ++nr) {
@@ -133,7 +121,7 @@ class GraphDrawing {
                            ncs = min(c + range, max_size - 1);
                        nc <= ncs; ++nc) {
                     if (count[nr][nc] == 0) {
-                      const double v = calc_max_ratio(i, nr, nc) - ratio;
+                      const double v = calc_score(i, nr, nc, 0) - ratio;
                       if (move.ratio > v) {
                         move = (Move){i, nr, nc, v};
                       }
