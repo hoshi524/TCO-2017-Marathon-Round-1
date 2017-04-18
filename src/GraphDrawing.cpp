@@ -2,7 +2,7 @@
 using namespace std;
 
 const double PI2 = M_PI * 2.0;
-const double TIME_LIMIT = 9500;
+const double TIME_LIMIT = 1000;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
@@ -39,31 +39,10 @@ double calc_dist(int i, int j) {
   return calc_dist(vertex[i][0], vertex[i][1], vertex[j][0], vertex[j][1]);
 }
 
-tuple<int, int> select_vertex(set<int>& selected) {
-  int vertex = -1, contain = 0, edge = 0;
-  for (int v = 0; v < N; ++v) {
-    if (selected.count(v)) continue;
-    int c = 0;
-    for (int i = 1; i <= edges[v][0]; ++i) {
-      if (selected.count(edges[v][i])) ++c;
-    }
-    if (contain < c || (contain == c && edge < edges[v][0])) {
-      vertex = v;
-      contain = c;
-      edge = edges[v][0];
-    }
-  }
-  return forward_as_tuple(vertex, contain);
-}
-
 double calc_value(int i, int j) {
   const double d = calc_dist(i, j);
-  double ratio;
-  if (d > length[i][j]) {
-    ratio = d / length[i][j];
-  } else {
-    ratio = length[i][j] / d;
-  }
+  const double l = length[i][j];
+  const double ratio = d > l ? d / l : l / d;
   return (ratio * ratio * ratio) - 1.0;
 }
 
