@@ -22,11 +22,7 @@ unsigned get_random() {
   return y ^= (y ^= (y ^= y << 13) >> 17) << 5;
 }
 
-double get_random_double() {
-  static uniform_real_distribution<double> unif(0, 1);
-  static default_random_engine re;
-  return unif(re);
-}
+double get_random_double() { return (double)get_random() / UINT_MAX; }
 
 double calc_dist(double i, double j, double x, double y) {
   double a = i - x;
@@ -68,7 +64,7 @@ class GraphDrawing {
       vertex[i][0] = get_random() % max_size;
       vertex[i][1] = get_random() % max_size;
     }
-    const int batch = (1 << 11) - 1;
+    const int batch = (1 << 8) - 1;
     int iterate = 0;
     while (true) {
       const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
