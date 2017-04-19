@@ -465,6 +465,7 @@ public class GraphDrawingVis {
 
     // ---------------------------------------------------
     public static void main(String[] args) {
+        int testcase = 100;
         vis = false;
         labels = true;
         debug = false;
@@ -473,8 +474,8 @@ public class GraphDrawingVis {
             if (args[i].equals("-vis")) vis = true;
             if (args[i].equals("-debug")) debug = true;
             if (args[i].equals("-labels")) labels = true;
+            if (args[i].equals("-testcase")) testcase = Integer.parseInt(args[++i]);
         }
-        int testcase = 100;
         double sum = 0;
         for (long seed = 100, end = seed + testcase; seed < end; ++seed) {
             sum += new GraphDrawingVis().exec(seed);
