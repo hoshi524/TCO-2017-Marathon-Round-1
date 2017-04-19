@@ -64,10 +64,11 @@ bool apply(int x, double r, double c, double a, double b, double time) {
       if (m2 < r) m2 = r;
     }
   }
-  const double ps = (s1 - m1 + 1) * time + m1 - 1;
-  const double ns = (s2 - m2 + 1) * time + m2 - 1;
-  const double allow = log(get_random_double()) * ps * time * 0.5;
-  return ps > ns + allow;
+  const double ps = (s1 - m1) * time + m1;
+  const double ns = (s2 - m2) * time + m2;
+  if (ps > ns) return true;
+  const double allow = ps * get_random_double() * time;
+  return ps > ns - allow;
 }
 
 double calc_score() {
