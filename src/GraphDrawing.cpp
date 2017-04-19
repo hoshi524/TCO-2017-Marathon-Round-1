@@ -44,6 +44,22 @@ double calc_score(int x, double r, double c, double time) {
   return sum * time + (max - 1.0) * (1.0 - time);
 }
 
+double calc_score() {
+  double min = 1e10;
+  double max = -1e10;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 1; j <= edges[i][0]; ++j) {
+      const int k = edges[i][j];
+      const double d =
+          calc_dist(vertex[i][0], vertex[i][1], vertex[k][0], vertex[k][1]);
+      const double r = d / length[i][k];
+      if (min > r) min = r;
+      if (max < r) max = r;
+    }
+  }
+  return min / max;
+}
+
 class GraphDrawing {
  public:
   vector<int> plot(int N_, vector<int> edges_) {
@@ -113,23 +129,19 @@ class GraphDrawing {
     {
       struct Vertex {
         int id;
-        double len;
+        double value;
       };
-      vector<Vertex> v_vector;
+      vector<Vertex> vv;
       for (int i = 0; i < N; ++i) {
-        Vertex v = (Vertex){i, 1e10};
-        for (int j = 1; j <= edges[i][0]; ++j) {
-          double len = length[i][edges[i][j]];
-          if (v.len > len) v.len = len;
-        }
-        v_vector.push_back(v);
+        vv.push_back(
+            (Vertex){i, calc_score(i, vertex[i][0], vertex[i][1], 0.005)});
       }
-      sort(v_vector.begin(), v_vector.end(),
-           [](const Vertex& a, const Vertex& b) { return a.len < b.len; });
+      sort(vv.begin(), vv.end(),
+           [](const Vertex& a, const Vertex& b) { return a.value > b.value; });
       vector<int> ret(N * 2);
       bool used[max_size][max_size];
       memset(used, 0, sizeof(used));
-      for (auto v : v_vector) {
+      for (auto v : vv) {
         const double pr = vertex[v.id][0];
         const double pc = vertex[v.id][1];
         double value = 1e10;
