@@ -2,14 +2,15 @@
 using namespace std;
 
 const double PI2 = M_PI * 2.0;
-const double TIME_LIMIT = 9700;
+const double TIME_LIMIT = 970;
+const int max_edge = 64;
 const int max_size = 701;
 const int max_vertex = 1000;
 int N;
 int E;
-int edges[max_vertex][max_vertex];
+int edges[max_vertex][max_edge];
+int length[max_vertex][max_vertex];
 double vertex[max_vertex][2];
-double length[max_vertex][max_vertex];
 
 double get_time() {
   unsigned long long a, d;
@@ -95,13 +96,14 @@ class GraphDrawing {
     for (int i = 0; i < E; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
+      const int len = edges_[i * 3 + 2];
       edges[v1][++edges[v1][0]] = v2;
       edges[v2][++edges[v2][0]] = v1;
-      const double len = edges_[i * 3 + 2];
       length[v2][v1] = len;
       length[v1][v2] = len;
     }
     for (int i = 0; i < N; ++i) {
+      assert(edges[i][0] < max_edge);
       vertex[i][0] = get_random() % max_size;
       vertex[i][1] = get_random() % max_size;
     }
