@@ -44,6 +44,31 @@ double calc_score(int x, double r, double c, double time) {
   return sum * time + (max - 1.0) * (1.0 - time);
 }
 
+bool apply(int x, double r, double c, double a, double b, double time) {
+  double s1 = 0, s2 = 0;
+  double m1 = 0, m2 = 0;
+  for (int i = 1; i <= edges[x][0]; ++i) {
+    const int y = edges[x][i];
+    const double l = length[x][y];
+    {
+      const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
+      const double r = d > l ? d / l : l / d;
+      s1 += (r * r) - 1;
+      if (m1 < r) m1 = r;
+    }
+    {
+      const double d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
+      const double r = d > l ? d / l : l / d;
+      s2 += (r * r) - 1;
+      if (m2 < r) m2 = r;
+    }
+  }
+  const double ps = (s1 - m1 + 1) * time + m1 - 1;
+  const double ns = (s2 - m2 + 1) * time + m2 - 1;
+  const double allow = log(get_random_double()) * ps * time * 0.5;
+  return ps > ns + allow;
+}
+
 double calc_score() {
   double min = 1e10;
   double max = -1e10;
@@ -98,10 +123,7 @@ class GraphDrawing {
           col = pc + dist * cos(dir);
           if (0 < row && row < max_size && 0 < col && col < max_size) break;
         }
-        const double ps = calc_score(v, pr, pc, time);
-        const double ns = calc_score(v, row, col, time);
-        const double allow = -log(get_random_double()) * ps * time * 0.5;
-        if (ps > ns - allow) {
+        if (apply(v, pr, pc, row, col, time)) {
           vertex[v][0] = row;
           vertex[v][1] = col;
         }
