@@ -8,8 +8,8 @@ const int max_size = 701;
 const int max_vertex = 1000;
 int N;
 int E;
-int edges[max_vertex][max_edge];
-int length[max_vertex][max_vertex];
+int esize[max_vertex];
+int edges[max_vertex][max_edge][2];
 double vertex[max_vertex][2];
 
 double get_time() {
@@ -34,10 +34,10 @@ double calc_dist(double i, double j, double x, double y) {
 double calc_score(int x, double r, double c, double time) {
   double sum = 0.0;
   double max = 0.0;
-  for (int i = 1; i <= edges[x][0]; ++i) {
-    const int y = edges[x][i];
+  for (int i = 0; i < esize[x]; ++i) {
+    const int y = edges[x][i][0];
+    const int l = edges[x][i][1];
     const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-    const double l = length[x][y];
     const double r = d > l ? d / l : l / d;
     sum += (r * r) - 1.0;
     if (max < r) max = r;
@@ -48,9 +48,9 @@ double calc_score(int x, double r, double c, double time) {
 bool apply(int x, double r, double c, double a, double b, double time) {
   double s1 = 0, s2 = 0;
   double m1 = 0, m2 = 0;
-  for (int i = 1; i <= edges[x][0]; ++i) {
-    const int y = edges[x][i];
-    const double l = length[x][y];
+  for (int i = 0; i < esize[x]; ++i) {
+    const int y = edges[x][i][0];
+    const int l = edges[x][i][1];
     {
       const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
       const double r = d > l ? d / l : l / d;
@@ -66,20 +66,19 @@ bool apply(int x, double r, double c, double a, double b, double time) {
   }
   const double ps = (s1 - m1) * time + m1;
   const double ns = (s2 - m2) * time + m2;
-  if (ps > ns) return true;
-  const double allow = ps * get_random_double() * time;
-  return ps > ns - allow;
+  return ps > ns || ps * (1 + get_random_double() * time) > ns;
 }
 
 double calc_score() {
   double min = 1e10;
   double max = -1e10;
   for (int i = 0; i < N; ++i) {
-    for (int j = 1; j <= edges[i][0]; ++j) {
-      const int k = edges[i][j];
+    for (int j = 0; j < esize[i]; ++j) {
+      const int k = edges[i][j][0];
+      const int l = edges[i][j][1];
       const double d =
           calc_dist(vertex[i][0], vertex[i][1], vertex[k][0], vertex[k][1]);
-      const double r = d / length[i][k];
+      const double r = d / l;
       if (min > r) min = r;
       if (max < r) max = r;
     }
@@ -93,18 +92,20 @@ class GraphDrawing {
     const double START_TIME = get_time();
     N = N_;
     E = edges_.size() / 3;
-    memset(edges, 0, sizeof(edges));
+    memset(esize, 0, sizeof(esize));
     for (int i = 0; i < E; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
       const int len = edges_[i * 3 + 2];
-      edges[v1][++edges[v1][0]] = v2;
-      edges[v2][++edges[v2][0]] = v1;
-      length[v2][v1] = len;
-      length[v1][v2] = len;
+      edges[v1][esize[v1]][0] = v2;
+      edges[v1][esize[v1]][1] = len;
+      edges[v2][esize[v2]][0] = v1;
+      edges[v2][esize[v2]][1] = len;
+      ++esize[v1];
+      ++esize[v2];
     }
     for (int i = 0; i < N; ++i) {
-      assert(edges[i][0] < max_edge);
+      assert(esize[i] < max_edge);
       vertex[i][0] = get_random() % max_size;
       vertex[i][1] = get_random() % max_size;
     }
