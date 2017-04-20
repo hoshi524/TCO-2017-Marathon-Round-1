@@ -63,6 +63,8 @@ bool apply(int x, double r, double c, double a, double b, double time) {
       if (m2 < r) m2 = r;
     }
   }
+  m1 -= 1;
+  m2 -= 1;
   const double ps = (s1 - m1) * time + m1;
   const double ns = (s2 - m2) * time + m2;
   return ps > ns || ps * (1 + get_random_double() * time) > ns;
@@ -118,8 +120,7 @@ class GraphDrawing {
         const double pc = vertex[v][1];
         double row, col;
         while (true) {
-          const double dist =
-              1 + (9 + (max_size / 2 - 9) * time) * get_random_double();
+          const double dist = max_size * time * get_random_double();
           const double dir = PI2 * get_random_double();
           row = pr + dist * sin(dir);
           col = pc + dist * cos(dir);

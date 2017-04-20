@@ -485,7 +485,10 @@ public class GraphDrawingVis {
         double sum = 0;
         for (long start = 200, seed = start, end = seed + testcase; seed < end; ++seed) {
             sum += new GraphDrawingVis().exec(seed);
-            System.out.println("average   = " + String.format("%.3f", sum / (seed - start + 1)));
+            System.out.println(
+                "average   = " + String.format("%.3f", sum / (seed - start + 1))
+                + "   case = " + (seed - start + 1)
+            );
         }
     }
 
