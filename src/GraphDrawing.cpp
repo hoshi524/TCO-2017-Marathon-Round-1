@@ -1,13 +1,12 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const double PI2 = M_PI * 2.0;
-const double TIME_LIMIT = 970;
-const int max_edge = 64;
-const int max_size = 701;
-const int max_vertex = 1000;
+constexpr double PI2 = M_PI * 2.0;
+constexpr double TIME_LIMIT = 970;
+constexpr int max_edge = 64;
+constexpr int max_size = 701;
+constexpr int max_vertex = 1000;
 int N;
-int E;
 int esize[max_vertex];
 int edges[max_vertex][max_edge][2];
 double vertex[max_vertex][2];
@@ -26,8 +25,8 @@ unsigned get_random() {
 double get_random_double() { return (double)get_random() / UINT_MAX; }
 
 double calc_dist(double i, double j, double x, double y) {
-  double a = i - x;
-  double b = j - y;
+  const double a = i - x;
+  const double b = j - y;
   return sqrt(a * a + b * b);
 }
 
@@ -91,9 +90,8 @@ class GraphDrawing {
   vector<int> plot(int N_, vector<int> edges_) {
     const double START_TIME = get_time();
     N = N_;
-    E = edges_.size() / 3;
     memset(esize, 0, sizeof(esize));
-    for (int i = 0; i < E; ++i) {
+    for (int i = 0, size = edges_.size() / 3; i < size; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
       const int len = edges_[i * 3 + 2];
