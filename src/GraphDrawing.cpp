@@ -2,7 +2,7 @@
 using namespace std;
 
 constexpr double PI2 = M_PI * 2.0;
-constexpr double TIME_LIMIT = 970;
+constexpr double TIME_LIMIT = 9700;
 constexpr int max_edge = 64;
 constexpr int max_size = 701;
 constexpr int max_vertex = 1000;
@@ -76,6 +76,11 @@ class GraphDrawing {
     const double START_TIME = get_time();
     N = N_;
     memset(esize, 0, sizeof(esize));
+    double min_len[N];
+    double max_dist[N];
+    for (int i = 0; i < N; ++i) {
+      min_len[i] = max_size;
+    }
     for (int i = 0, size = edges_.size() / 3; i < size; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
@@ -86,11 +91,14 @@ class GraphDrawing {
       edges[v2][esize[v2]][1] = len;
       ++esize[v1];
       ++esize[v2];
+      if (min_len[v1] > len) min_len[v1] = len;
+      if (min_len[v2] > len) min_len[v2] = len;
     }
     for (int i = 0; i < N; ++i) {
       assert(esize[i] < max_edge);
       vertex[i][0] = get_random() % max_size;
       vertex[i][1] = get_random() % max_size;
+      max_dist[i] = min(5.0 * min_len[i] + 50.0, max_size * 1.0);
     }
     const int batch = (1 << 8) - 1;
     int iterate = 0;
@@ -102,8 +110,9 @@ class GraphDrawing {
         const double pr = vertex[v][0];
         const double pc = vertex[v][1];
         double row, col;
+        const double md = min(max_dist[v] * time, (double)max_size);
         while (true) {
-          const double dist = max_size * time * get_random_double();
+          const double dist =  md * get_random_double();
           const double dir = PI2 * get_random_double();
           row = pr + dist * sin(dir);
           col = pc + dist * cos(dir);
@@ -247,22 +256,7 @@ double print_score() {
   return min / max;
 }
 
-void test() {
-  const int batch = 500;
-  double sum = 0;
-  for (int i = 1; i <= batch; ++i) {
-    int N;
-    vector<int> edges;
-    tie(N, edges) = testcase();
-    GraphDrawing graphDrawing;
-    graphDrawing.plot(N, edges);
-    sum += print_score();
-    fprintf(stderr, "average = %.3f  (%d / %d) \n", sum / i, i, batch);
-  }
-}
-
 int main() {
-  test();
 
   int N;
   cin >> N;
