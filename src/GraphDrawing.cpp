@@ -70,23 +70,6 @@ bool apply(int x, double r, double c, double a, double b, double time) {
   return ps > ns || ps * (1 + get_random_double() * time) > ns;
 }
 
-double calc_score() {
-  double min = 1e10;
-  double max = -1e10;
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < esize[i]; ++j) {
-      const int k = edges[i][j][0];
-      const int l = edges[i][j][1];
-      const double d =
-          calc_dist(vertex[i][0], vertex[i][1], vertex[k][0], vertex[k][1]);
-      const double r = d / l;
-      if (min > r) min = r;
-      if (max < r) max = r;
-    }
-  }
-  return min / max;
-}
-
 class GraphDrawing {
  public:
   vector<int> plot(int N_, vector<int> edges_) {
@@ -199,8 +182,88 @@ class GraphDrawing {
 };
 
 // -------8<------- end of solution submitted to the website -------8<-------
+
+tuple<int, vector<int>> testcase() {
+  int N = max_vertex;
+  int E = N * 10 / 4;
+  bool used[max_vertex][max_vertex];
+  memset(used, false, sizeof(used));
+  int V[max_vertex][2];
+  for (int i = 0; i < N; ++i) {
+    int r, c;
+    while (true) {
+      r = get_random() % max_size;
+      c = get_random() % max_size;
+      if (!used[r][c]) break;
+    }
+    used[r][c] = true;
+    V[i][0] = r;
+    V[i][1] = c;
+  }
+  memset(used, false, sizeof(used));
+  vector<int> edges(E * 3);
+  for (int i = 0; i < E; ++i) {
+    int r, c;
+    while (true) {
+      r = get_random() % max_vertex;
+      c = get_random() % max_vertex;
+      if (r != c && !used[r][c]) break;
+    }
+    used[r][c] = used[c][r] = true;
+    edges[3 * i + 0] = r;
+    edges[3 * i + 1] = c;
+    edges[3 * i + 2] = calc_dist(V[r][0], V[r][1], V[c][0], V[c][1]);
+  }
+  return forward_as_tuple(N, edges);
+}
+
+double print_score() {
+  double min = 1e10, mind, minl;
+  double max = -1e10, maxd, maxl;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < esize[i]; ++j) {
+      const int k = edges[i][j][0];
+      const int l = edges[i][j][1];
+      const double d =
+          calc_dist(vertex[i][0], vertex[i][1], vertex[k][0], vertex[k][1]);
+      const double r = d / l;
+      if (min > r) {
+        min = r;
+        mind = d;
+        minl = l;
+      }
+      if (max < r) {
+        max = r;
+        maxd = d;
+        maxl = l;
+      }
+    }
+  }
+  const double score = min / max;
+  fprintf(stderr,
+          "score   = %.3f  min = %.2f (%3.1f / %3.0f)  max = %.2f (%3.1f / "
+          "%3.0f) \n",
+          score, min, mind, minl, max, maxd, maxl);
+  return min / max;
+}
+
+void test() {
+  const int batch = 500;
+  double sum = 0;
+  for (int i = 1; i <= batch; ++i) {
+    int N;
+    vector<int> edges;
+    tie(N, edges) = testcase();
+    GraphDrawing graphDrawing;
+    graphDrawing.plot(N, edges);
+    sum += print_score();
+    fprintf(stderr, "average = %.3f  (%d / %d) \n", sum / i, i, batch);
+  }
+}
+
 int main() {
-  GraphDrawing gd;
+  test();
+
   int N;
   cin >> N;
   int E;
@@ -208,6 +271,7 @@ int main() {
   vector<int> edges(E);
   for (int i = 0; i < E; ++i) cin >> edges[i];
 
+  GraphDrawing gd;
   vector<int> ret = gd.plot(N, edges);
   cout << ret.size() << endl;
   for (int i = 0; i < (int)ret.size(); ++i) cout << ret[i] << endl;
