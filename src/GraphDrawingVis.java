@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 // --------------------------------------------------------
 class Pnt {
@@ -33,9 +35,9 @@ class Pnt {
 
 // --------------------------------------------------------
 public class GraphDrawingVis {
-    static int maxNV = 1000, minNV = 10;
+    static final int maxNV = 1000, minNV = 10;
 
-    final int SZ = 700;             // field size
+    static final int SZ = 700;             // field size
 
     int NV, NE;                     // number of vertices and number of edges in the graph
 
@@ -204,7 +206,8 @@ public class GraphDrawingVis {
                 maxi = i;
             }
             ratios[i] = r;
-            if (deb && Math.max(len, edgeLen[i]) >= Math.min(len, edgeLen[i])*2) System.out.println(edgeLen[i] + " " + (int)len + " " + String.format("%.3f", r));
+            if (deb && Math.max(len, edgeLen[i]) >= Math.min(len, edgeLen[i]) * 2)
+                System.out.println(edgeLen[i] + " " + (int) len + " " + String.format("%.3f", r));
         }
         tver.clear();
         tver.add(edgeBeg[mini]);
@@ -213,13 +216,13 @@ public class GraphDrawingVis {
         tver.add(edgeEnd[maxi]);
         System.out.println("vertices  = " + NV + "  edges = " + NE);
         System.out.println(
-            "Min ratio = " + String.format("%.2f", min_ratio)
-             + " ( " + String.format("%.1f", min1) + " , " + (int)min2 + " ) "
-             + edgeBeg[mini]+" - " + edgeEnd[mini]);
+                "Min ratio = " + String.format("%.2f", min_ratio)
+                        + " ( " + String.format("%.1f", min1) + " , " + (int) min2 + " ) "
+                        + edgeBeg[mini] + " - " + edgeEnd[mini]);
         System.out.println(
-            "Max ratio = " + String.format("%.2f", max_ratio) 
-            + " ( " + String.format("%.1f", max1) + " , " + (int)max2 + " ) "
-            + edgeBeg[maxi]+" - " + edgeEnd[maxi]);
+                "Max ratio = " + String.format("%.2f", max_ratio)
+                        + " ( " + String.format("%.1f", max1) + " , " + (int) max2 + " ) "
+                        + edgeBeg[maxi] + " - " + edgeEnd[maxi]);
         return min_ratio / max_ratio;
     }
 
@@ -297,7 +300,7 @@ public class GraphDrawingVis {
 
     static boolean vis, debug, labels;
 
-    static Process proc;
+    Process proc;
 
     JFrame jf;
 
@@ -369,7 +372,7 @@ public class GraphDrawingVis {
                         if (min_ratio > 1.0 - 1E-5) c = 0;
                         else c = 0x10001 * (int) ((1.0 - ratios[i]) / (1.0 - min_ratio) * 0xF0 + 0xF);
                     }
-                    if(!(tver.contains(edgeBeg[i]) || tver.contains(edgeEnd[i]))) continue;
+                    if (!(tver.contains(edgeBeg[i]) || tver.contains(edgeEnd[i]))) continue;
                     g2.setColor(new Color(c));
                     g2.drawLine(p[edgeBeg[i]].x, (SZ - 1 - p[edgeBeg[i]].y), p[edgeEnd[i]].x, (SZ - 1 - p[edgeEnd[i]].y));
                     if (labels) {
@@ -379,19 +382,19 @@ public class GraphDrawingVis {
                     }
                     double len = Math.sqrt(p[edgeBeg[i]].dist2(p[edgeEnd[i]]));
                     double r = len / edgeLen[i];
-                    System.out.println(edgeBeg[i] + " - " + edgeEnd[i] + " ( " + String.format("%.4f", len) + " , " + String.format("%.4f", r) +" )");
+                    System.out.println(edgeBeg[i] + " - " + edgeEnd[i] + " ( " + String.format("%.4f", len) + " , " + String.format("%.4f", r) + " )");
                 }
 
                 // vertices (with numbers)
                 g2.setColor(Color.BLACK);
                 for (int i = 0; i < NV; i++) {
-                    if(!(tver.contains(i) || tver.contains(i))) continue;
+                    if (!(tver.contains(i) || tver.contains(i))) continue;
                     g2.fillOval(p[i].x - 2, SZ - 1 - p[i].y - 2, 5, 5);
                     if (false && labels) {
                         ch = (i + "").toCharArray();
                         g2.drawChars(ch, 0, ch.length, p[i].x + 2, SZ - 1 - p[i].y - 2);
                     }
-                    System.out.println(i + " ( " + p[i].x + " , " + p[i].y +" )");
+                    System.out.println(i + " ( " + p[i].x + " , " + p[i].y + " )");
                 }
 
                 g2.setFont(new Font("Arial", Font.BOLD, 14));
@@ -470,7 +473,7 @@ public class GraphDrawingVis {
 
     // ---------------------------------------------------
     public static void main(String[] args) {
-        int testcase = 0xffff;
+        int testcase = 1000;
         vis = false;
         labels = true;
         debug = false;
@@ -481,14 +484,29 @@ public class GraphDrawingVis {
             if (args[i].equals("-labels")) labels = true;
             if (args[i].equals("-testcase")) testcase = Integer.parseInt(args[++i]);
         }
-        double sum = 0;
-        for (long start = 200, seed = start, end = seed + testcase; seed < end; ++seed) {
-            sum += new GraphDrawingVis().exec(seed);
-            System.out.println(
-                "average   = " + String.format("%.3f", sum / (seed - start + 1))
-                + "   case = " + (seed - start + 1)
-            );
+
+        class Parameter {
+            double sum = 0;
+            int testcase = 0;
         }
+        Parameter x = new Parameter();
+        ExecutorService es = Executors.newFixedThreadPool(30);
+        for (int s = 1000, all = s + testcase; s < all; ++s) {
+            final int seed = s;
+            es.submit(() -> {
+                try {
+                    final double score = new GraphDrawingVis().exec(seed);
+                    synchronized (x) {
+                        x.sum += score;
+                        x.testcase++;
+                        System.out.println("average   = " + String.format("%.3f", x.sum / x.testcase) + " #" + x.testcase);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+        es.shutdown();
     }
 
     // ---------------------------------------------------

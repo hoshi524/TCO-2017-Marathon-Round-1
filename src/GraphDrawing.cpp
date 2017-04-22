@@ -2,7 +2,7 @@
 using namespace std;
 
 constexpr double PI2 = M_PI * 2.0;
-constexpr double TIME_LIMIT = 9700;
+constexpr double TIME_LIMIT = 9800;
 constexpr int max_edge = 64;
 constexpr int max_size = 701;
 constexpr int max_vertex = 1000;
@@ -24,10 +24,19 @@ unsigned get_random() {
 
 double get_random_double() { return (double)get_random() / UINT_MAX; }
 
+// http://takashiijiri.com/study/miscs/fastsqrt.html
+double t_sqrt(const double& x) {
+  double xHalf = 0.5 * x;
+  long long int tmp = 0x5FE6EB50C7B537AAl - (*(long long int*)&x >> 1);
+  double xRes = *(double*)&tmp;
+  xRes *= (1.5 - (xHalf * xRes * xRes));
+  return xRes * x;
+}
+
 double calc_dist(double i, double j, double x, double y) {
   const double a = i - x;
   const double b = j - y;
-  return sqrt(a * a + b * b);
+  return t_sqrt(a * a + b * b);
 }
 
 double calc_score(int x, double r, double c, double time) {
@@ -52,22 +61,20 @@ bool apply(int x, double r, double c, double a, double b, double time) {
     const int l = edges[x][i][1];
     {
       const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-      const double r = d > l ? d / l : l / d;
-      s1 += (r * r) - 1;
+      const double r = (d > l ? d / l : l / d) - 1.0;
+      s1 += r;
       if (m1 < r) m1 = r;
     }
     {
       const double d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
-      const double r = d > l ? d / l : l / d;
-      s2 += (r * r) - 1;
+      const double r = (d > l ? d / l : l / d) - 1.0;
+      s2 += r;
       if (m2 < r) m2 = r;
     }
   }
-  m1 -= 1;
-  m2 -= 1;
   const double ps = (s1 - m1) * time + m1;
   const double ns = (s2 - m2) * time + m2;
-  return ps > ns || ps * (1 + get_random_double() * time) > ns;
+  return ps * (1 + get_random_double() * time) > ns;
 }
 
 class GraphDrawing {
@@ -98,7 +105,7 @@ class GraphDrawing {
       assert(esize[i] < max_edge);
       vertex[i][0] = get_random() % max_size;
       vertex[i][1] = get_random() % max_size;
-      max_dist[i] = min(5.0 * min_len[i] + 50.0, max_size * 1.0);
+      max_dist[i] = min(10.0 * min_len[i] + 100.0, max_size * 2.0);
     }
     const int batch = (1 << 8) - 1;
     int iterate = 0;
@@ -112,7 +119,7 @@ class GraphDrawing {
         double row, col;
         const double md = min(max_dist[v] * time, (double)max_size);
         while (true) {
-          const double dist =  md * get_random_double();
+          const double dist = md * get_random_double();
           const double dir = PI2 * get_random_double();
           row = pr + dist * sin(dir);
           col = pc + dist * cos(dir);
@@ -227,8 +234,8 @@ tuple<int, vector<int>> testcase() {
 }
 
 double print_score() {
-  double min = 1e10, mind, minl;
-  double max = -1e10, maxd, maxl;
+  double min = 1e10, mind = 0, minl = 0;
+  double max = -1e10, maxd = 0, maxl = 0;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < esize[i]; ++j) {
       const int k = edges[i][j][0];
@@ -257,7 +264,6 @@ double print_score() {
 }
 
 int main() {
-
   int N;
   cin >> N;
   int E;
