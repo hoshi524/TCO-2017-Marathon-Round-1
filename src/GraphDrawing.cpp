@@ -74,7 +74,7 @@ bool apply(int x, double r, double c, double a, double b, double time) {
   }
   const double ps = (s1 - m1) * time + m1;
   const double ns = (s2 - m2) * time + m2;
-  return ps * (1 + get_random_double() * time) > ns;
+  return ps * (1 + get_random_double() * time * 0.7) > ns;
 }
 
 class GraphDrawing {
