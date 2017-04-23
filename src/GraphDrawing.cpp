@@ -63,20 +63,24 @@ bool apply(int x, double r, double c, double a, double b, double time) {
       const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
       if (d > l) {
         s1 += d - l;
-        if (m1 < d / l) m1 = d / l;
+        const double r = d / l;
+        if (m1 < r) m1 = r;
       } else {
         s1 += l - d;
-        if (m1 < l / d) m1 = l / d;
+        const double r = l / d;
+        if (m1 < r) m1 = r;
       }
     }
     {
       const double d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
       if (d > l) {
         s2 += d - l;
-        if (m2 < d / l) m2 = d / l;
+        const double r = d / l;
+        if (m2 < r) m2 = r;
       } else {
         s2 += l - d;
-        if (m2 < l / d) m2 = l / d;
+        const double r = l / d;
+        if (m2 < r) m2 = r;
       }
     }
   }
