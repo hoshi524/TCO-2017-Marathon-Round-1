@@ -9,6 +9,8 @@ constexpr int max_vertex = 1000;
 int N;
 int esize[max_vertex];
 int edges[max_vertex][max_edge][2];
+double START_TIME;
+double max_dist[max_vertex];
 double vertex[max_vertex][2];
 
 double get_time() {
@@ -77,25 +79,55 @@ bool apply(int x, double r, double c, double a, double b, double time) {
   return ps * (1 + get_random_double() * time * 0.7) > ns;
 }
 
+void annealing(const double end) {
+  constexpr int batch = (1 << 8) - 1;
+  static int iterate = 0;
+  while (true) {
+    const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
+    if (time < end) break;
+    while ((++iterate & batch) != batch) {
+      const int v = get_random() % N;
+      const double pr = vertex[v][0];
+      const double pc = vertex[v][1];
+      double row, col;
+      const double md = min(max_dist[v] * time, (double)max_size);
+      while (true) {
+        const double dist = md * get_random_double();
+        const double dir = PI2 * get_random_double();
+        row = pr + dist * sin(dir);
+        col = pc + dist * cos(dir);
+        if (0 < row && row < max_size && 0 < col && col < max_size) break;
+      }
+      if (apply(v, pr, pc, row, col, time)) {
+        vertex[v][0] = row;
+        vertex[v][1] = col;
+      }
+    }
+  }
+}
+
 class GraphDrawing {
  public:
   vector<int> plot(int N_, vector<int> edges_) {
-    const double START_TIME = get_time();
+    START_TIME = get_time();
     N = N_;
     memset(esize, 0, sizeof(esize));
     double min_len[N];
-    double max_dist[N];
     for (int i = 0; i < N; ++i) {
       min_len[i] = max_size;
     }
+    int desired[max_vertex][max_edge];
+    constexpr int prev_len = 50;
     for (int i = 0, size = edges_.size() / 3; i < size; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
       const int len = edges_[i * 3 + 2];
       edges[v1][esize[v1]][0] = v2;
-      edges[v1][esize[v1]][1] = len;
       edges[v2][esize[v2]][0] = v1;
-      edges[v2][esize[v2]][1] = len;
+      edges[v1][esize[v1]][1] = max(prev_len, len);
+      edges[v2][esize[v2]][1] = max(prev_len, len);
+      desired[v1][esize[v1]] = len;
+      desired[v2][esize[v2]] = len;
       ++esize[v1];
       ++esize[v2];
       if (min_len[v1] > len) min_len[v1] = len;
@@ -107,30 +139,13 @@ class GraphDrawing {
       vertex[i][1] = get_random() % max_size;
       max_dist[i] = min(10.0 * min_len[i] + 100.0, max_size * 2.0);
     }
-    const int batch = (1 << 8) - 1;
-    int iterate = 0;
-    while (true) {
-      const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
-      if (time < 0) break;
-      while ((++iterate & batch) != batch) {
-        const int v = get_random() % N;
-        const double pr = vertex[v][0];
-        const double pc = vertex[v][1];
-        double row, col;
-        const double md = min(max_dist[v] * time, (double)max_size);
-        while (true) {
-          const double dist = md * get_random_double();
-          const double dir = PI2 * get_random_double();
-          row = pr + dist * sin(dir);
-          col = pc + dist * cos(dir);
-          if (0 < row && row < max_size && 0 < col && col < max_size) break;
-        }
-        if (apply(v, pr, pc, row, col, time)) {
-          vertex[v][0] = row;
-          vertex[v][1] = col;
-        }
+    annealing(0.5);
+    for (int i = 0; i < N; ++i) {
+      for (int j = 0; j < esize[i]; ++j) {
+        edges[i][j][1] = desired[i][j];
       }
     }
+    annealing(0.0);
     // cerr << "iterate   = " << iterate << endl;
     {
       double min_row = 1e10, max_row = -1e10;
