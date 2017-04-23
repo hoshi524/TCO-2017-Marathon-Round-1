@@ -9,6 +9,8 @@ constexpr int max_vertex = 1000;
 int N;
 int esize[max_vertex];
 int edges[max_vertex][max_edge][2];
+double START_TIME;
+double max_dist[max_vertex];
 double vertex[max_vertex][2];
 
 double get_time() {
@@ -53,7 +55,24 @@ double calc_score(int x, double r, double c, double time) {
   return sum * time + (max - 1.0) * (1.0 - time);
 }
 
-bool apply(int x, double r, double c, double a, double b, double time) {
+bool apply1(int x, double r, double c, double a, double b, double time) {
+  double s1 = 0, s2 = 0;
+  for (int i = 0; i < esize[x]; ++i) {
+    const int y = edges[x][i][0];
+    const int l = edges[x][i][1];
+    {
+      const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
+      s1 += d > l ? d - l : l - d;
+    }
+    {
+      const double d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
+      s2 += d > l ? d - l : l - d;
+    }
+  }
+  return s1 * (1 + get_random_double() * time * 0.7) > s2;
+}
+
+bool apply2(int x, double r, double c, double a, double b, double time) {
   double m1 = 0, m2 = 0;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
@@ -74,31 +93,41 @@ bool apply(int x, double r, double c, double a, double b, double time) {
   return m1 * (1 + get_random_double() * time * 0.7) > m2;
 }
 
-bool apply2(int x, double r, double c, double a, double b, double time) {
-  double s1 = 0, s2 = 0;
-  for (int i = 0; i < esize[x]; ++i) {
-    const int y = edges[x][i][0];
-    const int l = edges[x][i][1];
-    {
-      const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-      s1 += d > l ? d - l : l - d;
-    }
-    {
-      const double d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
-      s2 += d > l ? d - l : l - d;
+void annealing(double end, bool (*apply)(int x, double r, double c, double a,
+                                         double b, double time)) {
+  constexpr int batch = (1 << 8) - 1;
+  static int iterate = 0;
+  while (true) {
+    const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
+    if (time < end) break;
+    while ((++iterate & batch) != batch) {
+      const int v = get_random() % N;
+      const double pr = vertex[v][0];
+      const double pc = vertex[v][1];
+      double row, col;
+      const double md = min(max_dist[v] * time, (double)max_size);
+      while (true) {
+        const double dist = md * get_random_double();
+        const double dir = PI2 * get_random_double();
+        row = pr + dist * sin(dir);
+        col = pc + dist * cos(dir);
+        if (0 < row && row < max_size && 0 < col && col < max_size) break;
+      }
+      if (apply(v, pr, pc, row, col, time)) {
+        vertex[v][0] = row;
+        vertex[v][1] = col;
+      }
     }
   }
-  return s1 * (1 + get_random_double() * time * 0.7) > s2;
 }
 
 class GraphDrawing {
  public:
   vector<int> plot(int N_, vector<int> edges_) {
-    const double START_TIME = get_time();
+    START_TIME = get_time();
     N = N_;
     memset(esize, 0, sizeof(esize));
     double min_len[N];
-    double max_dist[N];
     for (int i = 0; i < N; ++i) {
       min_len[i] = max_size;
     }
@@ -121,37 +150,8 @@ class GraphDrawing {
       vertex[i][1] = get_random() % max_size;
       max_dist[i] = min(10.0 * min_len[i] + 100.0, max_size * 2.0);
     }
-    constexpr int batch = (1 << 8) - 1;
-    int iterate = 0;
-    while (true) {
-      const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
-      if (time < 0) break;
-      while ((++iterate & batch) != batch) {
-        const int v = get_random() % N;
-        const double pr = vertex[v][0];
-        const double pc = vertex[v][1];
-        double row, col;
-        const double md = min(max_dist[v] * time, (double)max_size);
-        while (true) {
-          const double dist = md * get_random_double();
-          const double dir = PI2 * get_random_double();
-          row = pr + dist * sin(dir);
-          col = pc + dist * cos(dir);
-          if (0 < row && row < max_size && 0 < col && col < max_size) break;
-        }
-        if (time > 0.2) {
-          if (apply2(v, pr, pc, row, col, time)) {
-            vertex[v][0] = row;
-            vertex[v][1] = col;
-          }
-        } else {
-          if (apply(v, pr, pc, row, col, time)) {
-            vertex[v][0] = row;
-            vertex[v][1] = col;
-          }
-        }
-      }
-    }
+    annealing(0.15, apply1);
+    annealing(0, apply2);
     // cerr << "iterate   = " << iterate << endl;
     {
       double min_row = 1e10, max_row = -1e10;
@@ -219,71 +219,6 @@ class GraphDrawing {
 };
 
 // -------8<------- end of solution submitted to the website -------8<-------
-
-tuple<int, vector<int>> testcase() {
-  int N = max_vertex;
-  int E = N * 10 / 4;
-  bool used[max_vertex][max_vertex];
-  memset(used, false, sizeof(used));
-  int V[max_vertex][2];
-  for (int i = 0; i < N; ++i) {
-    int r, c;
-    while (true) {
-      r = get_random() % max_size;
-      c = get_random() % max_size;
-      if (!used[r][c]) break;
-    }
-    used[r][c] = true;
-    V[i][0] = r;
-    V[i][1] = c;
-  }
-  memset(used, false, sizeof(used));
-  vector<int> edges(E * 3);
-  for (int i = 0; i < E; ++i) {
-    int r, c;
-    while (true) {
-      r = get_random() % max_vertex;
-      c = get_random() % max_vertex;
-      if (r != c && !used[r][c]) break;
-    }
-    used[r][c] = used[c][r] = true;
-    edges[3 * i + 0] = r;
-    edges[3 * i + 1] = c;
-    edges[3 * i + 2] = calc_dist(V[r][0], V[r][1], V[c][0], V[c][1]);
-  }
-  return forward_as_tuple(N, edges);
-}
-
-double print_score() {
-  double min = 1e10, mind = 0, minl = 0;
-  double max = -1e10, maxd = 0, maxl = 0;
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < esize[i]; ++j) {
-      const int k = edges[i][j][0];
-      const int l = edges[i][j][1];
-      const double d =
-          calc_dist(vertex[i][0], vertex[i][1], vertex[k][0], vertex[k][1]);
-      const double r = d / l;
-      if (min > r) {
-        min = r;
-        mind = d;
-        minl = l;
-      }
-      if (max < r) {
-        max = r;
-        maxd = d;
-        maxl = l;
-      }
-    }
-  }
-  const double score = min / max;
-  fprintf(stderr,
-          "score   = %.3f  min = %.2f (%3.1f / %3.0f)  max = %.2f (%3.1f / "
-          "%3.0f) \n",
-          score, min, mind, minl, max, maxd, maxl);
-  return min / max;
-}
-
 int main() {
   int N;
   cin >> N;
