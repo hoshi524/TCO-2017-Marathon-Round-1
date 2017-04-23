@@ -54,41 +54,41 @@ double calc_score(int x, double r, double c, double time) {
 }
 
 bool apply(int x, double r, double c, double a, double b, double time) {
-  double s1 = 0, s2 = 0;
   double m1 = 0, m2 = 0;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
     const int l = edges[x][i][1];
     {
       const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-      if (d > l) {
-        s1 += d - l;
-        const double r = d / l;
-        if (m1 < r) m1 = r;
-      } else {
-        s1 += l - d;
-        const double r = l / d;
-        if (m1 < r) m1 = r;
-      }
+      const double r = d > l ? d / l : l / d;
+      if (m1 < r) m1 = r;
     }
     {
       const double d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
-      if (d > l) {
-        s2 += d - l;
-        const double r = d / l;
-        if (m2 < r) m2 = r;
-      } else {
-        s2 += l - d;
-        const double r = l / d;
-        if (m2 < r) m2 = r;
-      }
+      const double r = d > l ? d / l : l / d;
+      if (m2 < r) m2 = r;
     }
   }
   m1 -= 1;
   m2 -= 1;
-  const double ps = (0.01 * s1 - m1) * time + m1;
-  const double ns = (0.01 * s2 - m2) * time + m2;
-  return ps * (1 + get_random_double() * time * 0.7) > ns;
+  return m1 * (1 + get_random_double() * time * 0.7) > m2;
+}
+
+bool apply2(int x, double r, double c, double a, double b, double time) {
+  double s1 = 0, s2 = 0;
+  for (int i = 0; i < esize[x]; ++i) {
+    const int y = edges[x][i][0];
+    const int l = edges[x][i][1];
+    {
+      const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
+      s1 += d > l ? d - l : l - d;
+    }
+    {
+      const double d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
+      s2 += d > l ? d - l : l - d;
+    }
+  }
+  return s1 * (1 + get_random_double() * time * 0.7) > s2;
 }
 
 class GraphDrawing {
@@ -139,9 +139,16 @@ class GraphDrawing {
           col = pc + dist * cos(dir);
           if (0 < row && row < max_size && 0 < col && col < max_size) break;
         }
-        if (apply(v, pr, pc, row, col, time)) {
-          vertex[v][0] = row;
-          vertex[v][1] = col;
+        if (time > 0.2) {
+          if (apply2(v, pr, pc, row, col, time)) {
+            vertex[v][0] = row;
+            vertex[v][1] = col;
+          }
+        } else {
+          if (apply(v, pr, pc, row, col, time)) {
+            vertex[v][0] = row;
+            vertex[v][1] = col;
+          }
         }
       }
     }
