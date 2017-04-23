@@ -4,13 +4,12 @@ using namespace std;
 constexpr double PI2 = M_PI * 2.0;
 constexpr double TIME_LIMIT = 9800;
 constexpr int max_edge = 64;
-constexpr int max_size = 701;
+constexpr int max_size = 700;
 constexpr int max_vertex = 1000;
 int N;
 int esize[max_vertex];
 int edges[max_vertex][max_edge][2];
 double START_TIME;
-double max_dist[max_vertex];
 double vertex[max_vertex][2];
 
 double get_time() {
@@ -49,7 +48,7 @@ double calc_score(int x, double r, double c, double time) {
     const int l = edges[x][i][1];
     const double d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
     const double r = d > l ? d / l : l / d;
-    sum += (r * r) - 1.0;
+    sum += r - 1.0;
     if (max < r) max = r;
   }
   return sum * time + (max - 1.0) * (1.0 - time);
@@ -100,12 +99,12 @@ void annealing(double end, bool (*apply)(int x, double r, double c, double a,
   while (true) {
     const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
     if (time < end) break;
+    const double md = max_size * time;
     while ((++iterate & batch) != batch) {
       const int v = get_random() % N;
       const double pr = vertex[v][0];
       const double pc = vertex[v][1];
       double row, col;
-      const double md = min(max_dist[v] * time, (double)max_size);
       while (true) {
         const double dist = md * get_random_double();
         const double dir = PI2 * get_random_double();
@@ -127,10 +126,6 @@ class GraphDrawing {
     START_TIME = get_time();
     N = N_;
     memset(esize, 0, sizeof(esize));
-    double min_len[N];
-    for (int i = 0; i < N; ++i) {
-      min_len[i] = max_size;
-    }
     for (int i = 0, size = edges_.size() / 3; i < size; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
@@ -141,17 +136,14 @@ class GraphDrawing {
       edges[v2][esize[v2]][1] = len;
       ++esize[v1];
       ++esize[v2];
-      if (min_len[v1] > len) min_len[v1] = len;
-      if (min_len[v2] > len) min_len[v2] = len;
     }
     for (int i = 0; i < N; ++i) {
       assert(esize[i] < max_edge);
       vertex[i][0] = get_random() % max_size;
       vertex[i][1] = get_random() % max_size;
-      max_dist[i] = min(10.0 * min_len[i] + 100.0, max_size * 2.0);
     }
-    annealing(0.15, apply1);
-    annealing(0, apply2);
+    annealing(0.2, apply1);
+    annealing(0.0, apply2);
     // cerr << "iterate   = " << iterate << endl;
     {
       double min_row = 1e10, max_row = -1e10;
@@ -164,8 +156,8 @@ class GraphDrawing {
         if (min_col > c) min_col = c;
         if (max_col < c) max_col = c;
       }
-      double ratio = min((max_size - 1) / (max_row - min_row),
-                         (max_size - 1) / (max_col - min_col));
+      double ratio =
+          min(max_size / (max_row - min_row), max_size / (max_col - min_col));
       for (int i = 0; i < N; ++i) {
         vertex[i][0] = (vertex[i][0] - min_row) * ratio;
         vertex[i][1] = (vertex[i][1] - min_col) * ratio;
@@ -184,7 +176,7 @@ class GraphDrawing {
       sort(vv.begin(), vv.end(),
            [](const Vertex& a, const Vertex& b) { return a.value > b.value; });
       vector<int> ret(N * 2);
-      bool used[max_size][max_size];
+      bool used[max_size + 1][max_size + 1];
       memset(used, 0, sizeof(used));
       for (auto v : vv) {
         const double pr = vertex[v.id][0];
@@ -193,10 +185,10 @@ class GraphDrawing {
         int row = -1, col = -1;
         const int range = 5;
         for (int r = max((int)pr - range, 0),
-                 rs = min((int)pr + range, max_size - 1);
+                 rs = min((int)pr + range, max_size);
              r <= rs; ++r) {
           for (int c = max((int)pc - range, 0),
-                   cs = min((int)pc + range, max_size - 1);
+                   cs = min((int)pc + range, max_size);
                c <= cs; ++c) {
             if (used[r][c]) continue;
             const double ts = calc_score(v.id, r, c, 0);

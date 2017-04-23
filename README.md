@@ -18,3 +18,5 @@ https://community.topcoder.com/longcontest/?module=ViewStandings&rd=16903
 - 重心を中央に直す
 
 ## memo
+
+15 150 = 789
