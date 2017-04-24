@@ -461,7 +461,6 @@ public class GraphDrawingVis {
             }
         }
         double score = runTest(seed);
-        System.out.println("Score     = " + String.format("%.3f", score));
         if (proc != null)
             try {
                 proc.destroy();
@@ -473,7 +472,7 @@ public class GraphDrawingVis {
 
     // ---------------------------------------------------
     public static void main(String[] args) {
-        int testcase = 1000;
+        int testcase = 2000;
         vis = false;
         labels = true;
         debug = false;
@@ -499,7 +498,8 @@ public class GraphDrawingVis {
                     synchronized (x) {
                         x.sum += score;
                         x.testcase++;
-                        System.out.println("average   = " + String.format("%.3f", x.sum / x.testcase) + " #" + x.testcase);
+                        System.out.println("Score     = " + String.format("%.4f", score));
+                        System.out.println("average   = " + String.format("%.4f", x.sum / x.testcase) + " #" + x.testcase);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

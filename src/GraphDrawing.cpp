@@ -94,14 +94,11 @@ bool apply2(int x, double r, double c, double a, double b, double time) {
 
 void annealing(double end, bool (*apply)(int x, double r, double c, double a,
                                          double b, double time)) {
-  constexpr int batch = (1 << 8) - 1;
-  static int iterate = 0;
   while (true) {
     const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
     if (time < end) break;
     const double md = max_size * time;
-    while ((++iterate & batch) != batch) {
-      const int v = get_random() % N;
+    for (int v = 0; v < N; ++v) {
       const double pr = vertex[v][0];
       const double pc = vertex[v][1];
       double row, col;

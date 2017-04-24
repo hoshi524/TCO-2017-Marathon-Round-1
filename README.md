@@ -19,4 +19,5 @@ https://community.topcoder.com/longcontest/?module=ViewStandings&rd=16903
 
 ## memo
 
-15 150 = 789
+testcase = 2000
+current  = 0.7900
