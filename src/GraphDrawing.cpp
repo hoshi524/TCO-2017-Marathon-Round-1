@@ -144,25 +144,6 @@ class GraphDrawing {
     }
     annealing(0.2, apply1);
     annealing(0.0, apply2);
-    // cerr << "iterate   = " << iterate << endl;
-    {
-      double min_row = 1e10, max_row = -1e10;
-      double min_col = 1e10, max_col = -1e10;
-      for (int i = 0; i < N; ++i) {
-        const double r = vertex[i][0];
-        const double c = vertex[i][1];
-        if (min_row > r) min_row = r;
-        if (max_row < r) max_row = r;
-        if (min_col > c) min_col = c;
-        if (max_col < c) max_col = c;
-      }
-      double ratio =
-          min(max_size / (max_row - min_row), max_size / (max_col - min_col));
-      for (int i = 0; i < N; ++i) {
-        vertex[i][0] = (vertex[i][0] - min_row) * ratio;
-        vertex[i][1] = (vertex[i][1] - min_col) * ratio;
-      }
-    };
     {
       struct Vertex {
         int id;
