@@ -2,17 +2,17 @@
 using namespace std;
 
 constexpr float PI2 = M_PI * 2.0;
-constexpr float TIME_LIMIT = 9800;
+constexpr double TIME_LIMIT = 9800;
 constexpr int max_edge = 64;
 constexpr int max_size = 700;
 constexpr int max_vertex = 1000;
 int N;
 int esize[max_vertex];
 int edges[max_vertex][max_edge][2];
-float START_TIME;
+double START_TIME;
 float vertex[max_vertex][2];
 
-float get_time() {
+double get_time() {
   unsigned long long a, d;
   __asm__ volatile("rdtsc" : "=a"(a), "=d"(d));
   return (d << 32 | a) / 2500000.0;
@@ -92,10 +92,10 @@ bool apply2(int x, float r, float c, float a, float b, float time) {
   return m1 * (1 + get_random_float() * time * 0.7) > m2;
 }
 
-void annealing(float end, bool (*apply)(int x, float r, float c, float a,
-                                        float b, float time)) {
+void annealing(double end, bool (*apply)(int x, float r, float c, float a,
+                                         float b, float time)) {
   while (true) {
-    const float time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
+    const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
     if (time < end) break;
     const float md = max_size * time;
     for (int v = 0; v < N; ++v) {
