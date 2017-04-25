@@ -45,7 +45,7 @@ float calc_score(int x, float r, float c, float time) {
   float max = 0.0;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
-    const int l = edges[x][i][1];
+    const float l = edges[x][i][1];
     const float d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
     const float r = d > l ? d / l : l / d;
     sum += r - 1.0;
@@ -58,7 +58,7 @@ bool apply1(int x, float r, float c, float a, float b, float time) {
   float s1 = 0, s2 = 0;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
-    const int l = edges[x][i][1];
+    const float l = edges[x][i][1];
     {
       const float d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
       s1 += d > l ? d - l : l - d;
@@ -75,7 +75,7 @@ bool apply2(int x, float r, float c, float a, float b, float time) {
   float m1 = 0, m2 = 0;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
-    const int l = edges[x][i][1];
+    const float l = edges[x][i][1];
     {
       const float d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
       const float r = d > l ? d / l : l / d;
