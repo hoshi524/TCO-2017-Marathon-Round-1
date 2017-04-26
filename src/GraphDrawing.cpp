@@ -8,8 +8,7 @@ constexpr int max_size = 700;
 constexpr int max_vertex = 1000;
 
 struct Vertex {
-  int id;
-  double v;
+  int id, v;
 };
 
 int N;
@@ -37,13 +36,13 @@ int calc_dist(int i, int j, int x, int y) {
   return DIST[abs(i - x)][abs(j - y)];
 }
 
-double calc_score(int x, int r, int c) {
-  double max = 0;
+int calc_score(int x, int r, int c) {
+  int max = 0;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
     const int l = edges[x][i][1];
     const int d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-    const double r = d > l ? (double)d / l : (double)l / d;
+    const int r = d > l ? (d << 10) / l : (l << 10) / d;
     if (max < r) max = r;
   }
   return max;
@@ -66,14 +65,12 @@ tuple<int, int> apply2(int x, int r, int c, int a, int b) {
     const int y = edges[x][i][0];
     const int l = edges[x][i][1];
     {
-      int d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-      if (d == 0) d = 1;
+      const int d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
       const int r = d > l ? (d << 10) / l : (l << 10) / d;
       if (v1 < r) v1 = r;
     }
     {
-      int d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
-      if (d == 0) d = 1;
+      const int d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
       const int r = d > l ? (d << 10) / l : (l << 10) / d;
       if (v2 < r) v2 = r;
     }
@@ -130,6 +127,7 @@ class GraphDrawing {
         DIST[i][j] = sqrt((double)(i * i + j * j)) * (1 << 10);
       }
     }
+    DIST[0][0] = 1;
     memset(esize, 0, sizeof(esize));
     for (int i = 0, size = edges_.size() / 3; i < size; ++i) {
       const int v1 = edges_[i * 3 + 0];
@@ -163,15 +161,14 @@ class GraphDrawing {
       for (auto v : vv) {
         const int pr = vertex[v.id][0];
         const int pc = vertex[v.id][1];
-        double value = 1e10;
-        int row = -1, col = -1;
+        int value = 0xffffff, row = -1, col = -1;
         const int range = 5;
         for (int r = max(pr - range, 0), rs = min(pr + range, max_size);
              r <= rs; ++r) {
           for (int c = max(pc - range, 0), cs = min(pc + range, max_size);
                c <= cs; ++c) {
             if (used[r][c]) continue;
-            const double ts = calc_score(v.id, r, c);
+            const int ts = calc_score(v.id, r, c);
             if (value > ts) {
               value = ts;
               row = r;
