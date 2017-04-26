@@ -85,19 +85,21 @@ void annealing(double end,
   while (true) {
     const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
     if (time < end) break;
-    const double md = max_size * time;
+    const int md = 1 + 400 * time;
     for (int v = 0; v < N; ++v) {
       const int pr = vertex[v][0];
       const int pc = vertex[v][1];
       int row, col;
-      while (true) {
-        const double dist = 1 + md * get_random_double();
-        const double dir = PI2 * get_random_double();
-        row = pr + dist * sin(dir) + 0.5;
-        col = pc + dist * cos(dir) + 0.5;
-        if ((row != pr || col != pc) && 0 <= row && row <= max_size &&
-            0 <= col && col <= max_size)
-          break;
+      {
+        const int minr = max(pr - md, 0);
+        const int maxr = min(pr + md, max_size) + 1;
+        const int minc = max(pc - md, 0);
+        const int maxc = min(pc + md, max_size) + 1;
+        while (true) {
+          row = minr + get_random() % (maxr - minr);
+          col = minc + get_random() % (maxc - minc);
+          if (pr != row || pc != col) break;
+        }
       }
       if (apply(v, pr, pc, row, col, time)) {
         vertex[v][0] = row;
@@ -114,7 +116,7 @@ class GraphDrawing {
     N = N_;
     for (int i = 0; i <= max_size; ++i) {
       for (int j = 0; j <= max_size; ++j) {
-        DIST[i][j] = sqrt(i * i + j * j) * (1 << 15);
+        DIST[i][j] = sqrt((double)(i * i + j * j)) * (1 << 15);
       }
     }
     memset(esize, 0, sizeof(esize));
