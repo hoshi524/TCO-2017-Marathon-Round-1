@@ -47,14 +47,8 @@ bool apply1(int x, int r, int c, int a, int b, double time) {
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
     const int l = edges[x][i][1];
-    {
-      const int d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-      s1 += d > l ? d - l : l - d;
-    }
-    {
-      const int d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
-      s2 += d > l ? d - l : l - d;
-    }
+    s1 += abs(calc_dist(r, c, vertex[y][0], vertex[y][1]) - l);
+    s2 += abs(calc_dist(a, b, vertex[y][0], vertex[y][1]) - l);
   }
   return s1 * (1 + get_random_double() * time * 0.7) > s2;
 }

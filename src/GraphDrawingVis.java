@@ -39,7 +39,7 @@ public class GraphDrawingVis {
 
     static final int SZ = 700;             // field size
 
-    int NV, NE;                     // number of vertices and number of edges in the graph
+    int NV, NE, distort;                     // number of vertices and number of edges in the graph
 
     int[] edgeBeg, edgeEnd;         // indices of edges start and ends
 
@@ -138,7 +138,7 @@ public class GraphDrawingVis {
             }
 
             // calculate lengths based on the real values and distort a certain percentage of them
-            int distort = rnd.nextInt(100);
+            distort = rnd.nextInt(100);
             if (debug) {
                 System.out.println("seed                    = " + seed);
                 System.out.println("Distortion percentage   = " + distort);
@@ -214,7 +214,7 @@ public class GraphDrawingVis {
         tver.add(edgeEnd[mini]);
         tver.add(edgeBeg[maxi]);
         tver.add(edgeEnd[maxi]);
-        System.out.println("vertices  = " + NV + "  edges = " + NE);
+        System.out.println("vertices  = " + NV + "  edges = " + NE + "  distort = " + distort);
         System.out.println(
                 "Min ratio = " + String.format("%.2f", min_ratio)
                         + " ( " + String.format("%.1f", min1) + " , " + (int) min2 + " ) "
