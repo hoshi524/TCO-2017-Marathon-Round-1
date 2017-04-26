@@ -85,9 +85,9 @@ void annealing(double end,
   while (true) {
     const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
     if (time < end) break;
-    const int md = 1 + 400 * time;
+    const int md = 1 + 300 * time;
     for (int i = 0; i < (1 << 10); ++i) {
-      const int x = (pow(get_random_double(), 2.0) - 0.0001) * N;
+      const int x = (pow(get_random_double(), 2) - 0.001) * N;
       const int v = sort_vertex[x].id;
       const int pr = vertex[v][0];
       const int pc = vertex[v][1];
