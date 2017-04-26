@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-constexpr float PI2 = M_PI * 2.0;
+constexpr double PI2 = M_PI * 2.0;
 constexpr double TIME_LIMIT = 9800;
 constexpr int max_edge = 64;
 constexpr int max_size = 700;
@@ -9,8 +9,9 @@ constexpr int max_vertex = 1000;
 int N;
 int esize[max_vertex];
 int edges[max_vertex][max_edge][2];
+int vertex[max_vertex][2];
+int DIST[max_size + 1][max_size + 1];
 double START_TIME;
-float vertex[max_vertex][2];
 
 double get_time() {
   unsigned long long a, d;
@@ -23,91 +24,80 @@ unsigned get_random() {
   return y ^= (y ^= (y ^= y << 13) >> 17) << 5;
 }
 
-float get_random_float() { return (float)get_random() / UINT_MAX; }
+double get_random_double() { return (double)get_random() / UINT_MAX; }
 
-// http://takashiijiri.com/study/miscs/fastsqrt.html
-float t_sqrt(const float& x) {
-  float xHalf = 0.5f * x;
-  int tmp = 0x5F3759DF - (*(int*)&x >> 1);
-  float xRes = *(float*)&tmp;
-  xRes *= (1.5f - (xHalf * xRes * xRes));
-  return xRes * x;
+int calc_dist(int i, int j, int x, int y) {
+  return DIST[abs(i - x)][abs(j - y)];
 }
 
-float calc_dist(float i, float j, float x, float y) {
-  const float a = i - x;
-  const float b = j - y;
-  return t_sqrt(a * a + b * b);
-}
-
-float calc_score(int x, float r, float c, float time) {
-  float sum = 0.0;
-  float max = 0.0;
+double calc_score(int x, int r, int c) {
+  double max = 0;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
-    const float l = edges[x][i][1];
-    const float d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-    const float r = d > l ? d / l : l / d;
-    sum += r - 1.0;
+    const int l = edges[x][i][1];
+    const int d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
+    const double r = d > l ? (double)d / l : (double)l / d;
     if (max < r) max = r;
   }
-  return sum * time + (max - 1.0) * (1.0 - time);
+  return max;
 }
 
-bool apply1(int x, float r, float c, float a, float b, float time) {
-  float s1 = 0, s2 = 0;
+bool apply1(int x, int r, int c, int a, int b, double time) {
+  int s1 = 0, s2 = 0;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
-    const float l = edges[x][i][1];
+    const int l = edges[x][i][1];
     {
-      const float d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
+      const int d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
       s1 += d > l ? d - l : l - d;
     }
     {
-      const float d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
+      const int d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
       s2 += d > l ? d - l : l - d;
     }
   }
-  return s1 * (1 + get_random_float() * time * 0.7) > s2;
+  return s1 * (1 + get_random_double() * time * 0.7) > s2;
 }
 
-bool apply2(int x, float r, float c, float a, float b, float time) {
-  float m1 = 0, m2 = 0;
+bool apply2(int x, int r, int c, int a, int b, double time) {
+  double m1 = 1, m2 = 1;
   for (int i = 0; i < esize[x]; ++i) {
     const int y = edges[x][i][0];
-    const float l = edges[x][i][1];
+    const int l = edges[x][i][1];
     {
-      const float d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
-      const float r = d > l ? d / l : l / d;
+      const int d = calc_dist(r, c, vertex[y][0], vertex[y][1]);
+      const double r = d > l ? (double)d / l : (double)l / d;
       if (m1 < r) m1 = r;
     }
     {
-      const float d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
-      const float r = d > l ? d / l : l / d;
+      const int d = calc_dist(a, b, vertex[y][0], vertex[y][1]);
+      const double r = d > l ? (double)d / l : (double)l / d;
       if (m2 < r) m2 = r;
     }
   }
   m1 -= 1;
   m2 -= 1;
-  return m1 * (1 + get_random_float() * time * 0.7) > m2;
+  return m1 * (1 + get_random_double() * time * 0.7) > m2;
 }
 
-void annealing(double end, bool (*apply)(int x, float r, float c, float a,
-                                         float b, float time)) {
+void annealing(double end,
+               bool (*apply)(int x, int r, int c, int a, int b, double time)) {
   while (true) {
     const double time = (START_TIME + TIME_LIMIT - get_time()) / TIME_LIMIT;
     if (time < end) break;
-    const float md = max_size * time;
+    const double md = max_size * time;
     for (int v = 0; v < N; ++v) {
-      const float pr = vertex[v][0];
-      const float pc = vertex[v][1];
-      float row, col;
+      const int pr = vertex[v][0];
+      const int pc = vertex[v][1];
+      int row, col;
       while (true) {
-        const float dist = md * get_random_float();
-        const float dir = PI2 * get_random_float();
-        row = pr + dist * sin(dir);
-        col = pc + dist * cos(dir);
-        if (0 < row && row < max_size && 0 < col && col < max_size) break;
+        const double dist = 1 + md * get_random_double();
+        const double dir = PI2 * get_random_double();
+        row = pr + dist * sin(dir) + 0.5;
+        col = pc + dist * cos(dir) + 0.5;
+        if ((row != pr || col != pc) && 0 <= row && row <= max_size &&
+            0 <= col && col <= max_size)
+          break;
       }
       if (apply(v, pr, pc, row, col, time)) {
         vertex[v][0] = row;
@@ -122,11 +112,16 @@ class GraphDrawing {
   vector<int> plot(int N_, vector<int> edges_) {
     START_TIME = get_time();
     N = N_;
+    for (int i = 0; i <= max_size; ++i) {
+      for (int j = 0; j <= max_size; ++j) {
+        DIST[i][j] = sqrt(i * i + j * j) * (1 << 15);
+      }
+    }
     memset(esize, 0, sizeof(esize));
     for (int i = 0, size = edges_.size() / 3; i < size; ++i) {
       const int v1 = edges_[i * 3 + 0];
       const int v2 = edges_[i * 3 + 1];
-      const int len = edges_[i * 3 + 2];
+      const int len = edges_[i * 3 + 2] << 15;
       edges[v1][esize[v1]][0] = v2;
       edges[v1][esize[v1]][1] = len;
       edges[v2][esize[v2]][0] = v1;
@@ -144,32 +139,29 @@ class GraphDrawing {
     {
       struct Vertex {
         int id;
-        float value;
+        double v;
       };
       vector<Vertex> vv;
       for (int i = 0; i < N; ++i) {
-        vv.push_back(
-            (Vertex){i, calc_score(i, vertex[i][0], vertex[i][1], 0.005)});
+        vv.push_back((Vertex){i, calc_score(i, vertex[i][0], vertex[i][1])});
       }
       sort(vv.begin(), vv.end(),
-           [](const Vertex& a, const Vertex& b) { return a.value > b.value; });
+           [](const Vertex& a, const Vertex& b) { return a.v > b.v; });
       vector<int> ret(N * 2);
       bool used[max_size + 1][max_size + 1];
       memset(used, 0, sizeof(used));
       for (auto v : vv) {
-        const float pr = vertex[v.id][0];
-        const float pc = vertex[v.id][1];
-        float value = 1e10;
+        const int pr = vertex[v.id][0];
+        const int pc = vertex[v.id][1];
+        double value = 1e10;
         int row = -1, col = -1;
         const int range = 5;
-        for (int r = max((int)pr - range, 0),
-                 rs = min((int)pr + range, max_size);
+        for (int r = max(pr - range, 0), rs = min(pr + range, max_size);
              r <= rs; ++r) {
-          for (int c = max((int)pc - range, 0),
-                   cs = min((int)pc + range, max_size);
+          for (int c = max(pc - range, 0), cs = min(pc + range, max_size);
                c <= cs; ++c) {
             if (used[r][c]) continue;
-            const float ts = calc_score(v.id, r, c, 0);
+            const double ts = calc_score(v.id, r, c);
             if (value > ts) {
               value = ts;
               row = r;
